@@ -4,39 +4,13 @@ from numba import jit
 import matplotlib.pyplot as plt
 from math import cos,sin,asin,atan,tan
 from ceps import CEPS
-from tool import xcorr
+from mathFunc import xcorr,xcorrEqual,xcorrSimple
 from obspy import taup
 from distaz import DistAz
 import scipy.io as sio
 import os
 
 rad2deg=1/np.pi*180
-@jit
-def xcorrSimple(a,b):
-    la=a.size
-    lb=b.size
-    c=np.zeros(la-lb+1)
-    for i in range(la-lb+1):
-        tc= (a[i:(i+lb)]*b[0:(0+lb)]).sum()
-        c[i]=tc
-    return c
-
-@jit
-def xcorrEqual(a,b):
-    la=a.size
-    lb=b.size
-    c=np.zeros(la)
-    tb0=(b*b).sum()
-    for i in range(la):
-        i1=min(i+lb,la)
-        ii1=i1-i
-        #print(ii1)
-        tc= (a[i:i1]*b[0:ii1]).sum()
-        tb=tb0
-        if ii1!=lb:
-            tb=(b[0:ii1]*b[0:ii1]).sum()
-        c[i]=tc/np.sqrt(tb)
-    return c
 
 def iterconv(L,Q,f=[1/10,4],f0=1,delta=0.02,N=2,threshold=0.01,\
     isAbs=True,isPlot=False,maxIT=100,isSave=False,isFFTShift=False\

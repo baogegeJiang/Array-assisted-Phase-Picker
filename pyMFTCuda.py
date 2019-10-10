@@ -1,58 +1,17 @@
 import numpy as np
 from numba import jit, float32, int64
 from obspy import UTCDateTime
-from tool import getDetec, QuakeCC, RecordCC
-import matplotlib.pyplot as plt
+from tool import  QuakeCC, RecordCC
+from mathFunc import getDetec, cmax,corrNP
 import time as Time
 from distaz import DistAz
 from multiprocessing import Process, Manager
-import scipy.signal  as signal
 import cudaFunc
 import torch
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 maxStaN=20
 nptype=np.float32
-@jit(int64(float32[:],float32,int64,int64,float32[:]))
-def cmax(a,tmin,winL,laout,aM):
-    i=0 
-    while i<laout:
-        if a[i]>tmin:
-            j=0
-            while j<min(winL,i):
-                if a[i]>a[i-j]:
-                    a[i-j]=a[i]
-                j+=1
-        if i>=winL:
-            aM[i-winL]+=a[i-winL]
-        i+=1
-    while i<laout+winL:
-        aM[i-winL]+=a[i-winL]
-        i+=1
-
-def cmax_bak(a,tmin,winL,laout,aM):
-    i=0 
-    indexL=np.where(a>tmin)[0]
-    for i in indexL:
-        a[max(i-winL,0):i]=np.fmax(a[max(i-winL,0):i],a[i])
-    aM[:laout]+=a[:laout]
-
 corrTorch=cudaFunc.torchcorrnn
-
-def corrNP(a,b):
-    a=a.astype(nptype)
-    b=b.astype(nptype)
-    if len(b)==0:
-        return a*0+1
-    c=signal.correlate(a,b,'valid')
-    tb=(b**2).sum()**0.5
-    taL=(a**2).cumsum()
-    ta0=taL[len(b)-1]**0.5
-    taL=(taL[len(b):]-taL[:-len(b)])**0.5
-    c[1:]=c[1:]/tb/taL
-    c[0]=c[0]/tb/ta0
-    return c,c.mean(),c.std()
-
-
 
 def getTimeLim(staL):
     n = len(staL)
@@ -63,7 +22,7 @@ def getTimeLim(staL):
         eTime = min([staL[i].eTime, eTime])
     return bTime, eTime
 
-def doMFT(staL, waveform,bTime, n, wM=np.zeros((2*maxStaN,86700*50),dtype=nptype),delta=0.02\
+def doMFT(staL,waveform,bTime, n, wM=np.zeros((2*maxStaN,86700*50),dtype=nptype),delta=0.02\
         ,minMul=3,MINMUL=8, winTime=0.4,minDelta=20*50, locator=None,tmpName=None,quakeRef=None,\
         maxCC=1,R=[-90,90,-180,180],staInfos=None,maxDis=200,deviceL=['cuda:0']):
     time_start = Time.time()

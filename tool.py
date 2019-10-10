@@ -5,6 +5,7 @@ from scipy import interpolate as interp
 from obspy import UTCDateTime, taup
 import obspy
 from multiprocessing import Process, Manager
+from mathFunc import matTime2UTC, getDetec
 import os
 import re
 from glob import glob
@@ -12,27 +13,9 @@ from numba import jit
 from distaz import DistAz
 import matplotlib.pyplot as plt
 from scipy import signal
-from openpyxl import load_workbook,Workbook
+from openpyxl import Workbook
 
 rad2deg=1/np.pi*180
-def matTime2UTC(matTime,time0=719529):
-    return (matTime-time0)*86400
-@jit
-def xcorr(a,b):
-    la=a.size
-    lb=b.size
-    c=np.zeros(la-lb+1)
-    tb=0
-    for i in range(lb):
-        tb+=b[i]*b[i]
-    for i in range(la-lb+1):
-        ta=0
-        tc=0
-        ta= (a[i:(i+lb)]*a[i:(i+lb)]).sum()
-        tc= (a[i:(i+lb)]*b[0:(0+lb)]).sum()
-        if ta!=0 and tb!=0:
-            c[i]=tc/np.sqrt(ta*tb)
-    return c
 
 def getYmdHMSj(date):
     YmdHMSj = {}
@@ -53,22 +36,22 @@ class Record(list):
         self.append(staIndex)
         self.append(pTime)
         self.append(sTime)
-    def copy(self):
-        return Record(self[0],self[1],self[2])
-    def getStaIndex(self):
-        return self[0]
-    def pTime(self):
-        return self[1]
     def __repr__(self):
         return self.summary()
-    def sTime(self):
-        return self[2]
     def summary(self):
         Summary='%d'%self[0]
         for i in range(1,len(self)):
             Summary=Summary+" %f "%self[i]
         Summary=Summary+'\n'
         return Summary
+    def copy(self):
+        return Record(self[0],self[1],self[2])
+    def getStaIndex(self):
+        return self[0]
+    def pTime(self):
+        return self[1]
+    def sTime(self):
+        return self[2]
     def setByLine(self,line):
         self[0]=int(line[0])
         for i in range(1,len(self)):
@@ -92,23 +75,8 @@ class Quake(list):
             self.filename = filename
         else:
             self.filename = self.getFilename()
-
-    def append(self, addOne):
-        if isinstance(addOne, Record):
-            super(Quake, self).append(addOne)
-        else:
-            raise ValueError('should pass in a Record class')
     def __repr__(self):
         return self.summary()
-    def copy(self):
-        quake=Quake(loc=self.loc,time=self.time,randID=self.randID,filename=self.filename\
-            ,ml=self.ml)
-        for record in self:
-            quake.append(record.copy())
-        return quake
-    def getFilename(self):
-        dayDir = str(int(self.time/86400))+'/'
-        return dayDir+str(int(self.time))+'_'+str(self.randID)+'.mat'
     def summary(self,count=0):
         ml=-9
         if self.ml!=None:
@@ -118,6 +86,22 @@ class Quake(list):
             self.time, len(self),count, self.randID, \
             self.filename,ml,self.loc[2])
         return Summary
+    def append(self, addOne):
+        if isinstance(addOne, Record):
+            super(Quake, self).append(addOne)
+        else:
+            raise ValueError('should pass in a Record class')
+    def copy(self):
+        quake=Quake(loc=self.loc,time=self.time,randID=self.randID,filename=self.filename\
+            ,ml=self.ml)
+        for record in self:
+            quake.append(record.copy())
+        return quake
+
+    def getFilename(self):
+        dayDir = str(int(self.time/86400))+'/'
+        return dayDir+str(int(self.time))+'_'+str(self.randID)+'.mat'
+
     def setFromNDK(self,line):
         sec=float(line[22:26])
         self.time=UTCDateTime(line[5:22]+"0.00").timestamp+sec
@@ -127,6 +111,7 @@ class Quake(list):
         self.ml=max(m1,m2)
         self.filename = self.getFilename()
         return self
+
     def setFromIris(self,line):
         line=line.split('|')
         self.time=UTCDateTime(line[1]).timestamp
@@ -136,6 +121,7 @@ class Quake(list):
         self.ml=float(line[10])
         self.filename = self.getFilename()
         return self
+
     def setByLine(self,line):
         if len(line) >= 4:
             if len(line)>12:
@@ -148,12 +134,14 @@ class Quake(list):
             self.randID=int(line[9])
             self.filename=line[11]
         return self
+
     def setByWLX(self,line,staInfos=None):
         self.time=UTCDateTime(line[:22]).timestamp
         self.loc=[float(line[23:29]),float(line[30:37]),float(line[38:41])]
         self.ml=float(line[44:])
         self.filename=self.getFilename()
         return self
+
     def setByMat(self,q):
         pTimeL=q[0].reshape(-1)
         sTimeL=q[1].reshape(-1)
@@ -173,17 +161,20 @@ class Quake(list):
                     sTime=matTime2UTC(sTimeL[i])
                 self.append(Record(i,pTime,sTime))
         return self
+
     def getReloc(self,line):
         self.time=self.tomoTime(line)
         self.loc[0]=float(line[1])
         self.loc[1]=float(line[2])
         self.loc[2]=float(line[3])
         return self
+
     def tomoTime(self,line):
         m=int(line[14])
         sec=float(line[15])
         return UTCDateTime(int(line[10]),int(line[11]),int(line[12])\
             ,int(line[13]),m+int(sec/60),sec%60).timestamp
+
     def calCover(self,staInfos):
         coverL=np.zeros(360)
         for record in self:
@@ -199,6 +190,7 @@ class Quake(list):
         coverL=np.sign(coverL)*np.sign(coverL[L])*(coverL+coverL[L])
         coverRate=np.sign(coverL).sum()/360
         return coverRate
+
     def getPTimeL(self,staInfos):
         timePL=np.zeros(len(staInfos))
         for record in self:
@@ -212,6 +204,7 @@ class Quake(list):
             if record.sTime()!=0:
                 timeSL[record.getStaIndex()]=record.sTime()
         return timeSL
+
     def findTmpIndex(self,staIndex):
         count=0
         for record in self:
@@ -219,10 +212,12 @@ class Quake(list):
                 return count
             count+=1
         return -999
+
     def setRandIDByMl(self):
         self.randID=int(np.floor(np.abs(10+self.ml)*100));
         namePre=self.filename.split('_')[0]
         self.filename=namePre+'_'+str(self.randID)+'.mat'
+
     def outputWLX(self):
         Y=getYmdHMSj(UTCDateTime(self.time))
         tmpStr=Y['Y']+'/'+Y['m']+'/'+Y['d']+' '+\
@@ -230,6 +225,7 @@ class Quake(list):
         ' '+'%6.3f %7.3f %3.1f M %3.1f'%(self.loc[0],\
             self.loc[1],self.loc[2],self.ml)
         return tmpStr
+
 class RecordCC(Record):
     def __init__(self,staIndex=-1, pTime=-1, sTime=-1, pCC=-1, sCC=-1, pM=-1, pS=-1, sM=-1, sS=-1):
         self.append(staIndex)
@@ -241,6 +237,7 @@ class RecordCC(Record):
         self.append(pS)
         self.append(sM)
         self.append(sS)
+
     def getPCC(self):
         return self[3]
     def getSCC(self):
@@ -392,25 +389,6 @@ def getQuakeLD(quakeL):
     for quake in quakeL:
         D[quake.filename]=quake 
     return D
-@jit
-def getDetec(x, minValue=0.2, minDelta=200):
-    indexL = [-10000]
-    vL = [-1]
-    for i in range(len(x)):
-        if x[i] <= minValue:
-            continue
-        if i > indexL[-1]+minDelta:
-            vL.append(x[i])
-            indexL.append(i)
-            continue
-        if x[i] > vL[-1]:
-            vL[-1] = x[i]
-            indexL[-1] = i
-    if vL[0] == -1:
-        indexL = indexL[1:]
-        vL = vL[1:]
-    return np.array(indexL), np.array(vL)
-
 
 def divideRange(L, N):
     dL = (L[1]-L[0])/N

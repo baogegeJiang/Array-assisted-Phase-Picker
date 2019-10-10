@@ -13,6 +13,7 @@ from threading import Thread
 import time
 from locate import locator
 import math
+from mathFunc import getDetec
 import mapTool as mt
 from distaz import DistAz
 
@@ -67,10 +68,6 @@ def originFileName(net, station, comp, YmdHMSJ, dirL=['D:\\data\\after2\\']):
     #print(sacFileNames)
     return sacFileNames
 
-
-
-
-
 class sta(object):
     def __init__(self, net, station, day, modelL=None, staTimeM=None, loc=None, comp=\
         ['BHE','BHN','BHZ'], getFileName=originFileName, freq=[-1, -1], mode='mid', isClearData=False,\
@@ -105,7 +102,7 @@ class sta(object):
             minDeltaL=[500, 750]
             for i in range(len(modelL)):
                 #print(np.where(predictLongData(modelL[i], self.data.data, indexL=indexLL[i])>0.25)[0].size)
-                tmpL = tool.getDetec(predictLongData(modelL[i], self.data.data, indexL=indexLL[i]), \
+                tmpL = getDetec(predictLongData(modelL[i], self.data.data, indexL=indexLL[i]), \
                     minValue=minValueL[i], minDelta = minDeltaL[i])
                 self.timeL.append(tmpL[0])
                 self.vL.append(tmpL[1])

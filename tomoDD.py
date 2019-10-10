@@ -1,11 +1,11 @@
 import numpy as np
-from obspy import UTCDateTime
 from distaz import DistAz
+from obspy import UTCDateTime
 from tool import getYmdHMSj
 from numba import jit
 import matplotlib.pyplot as plt
 import os
-from tool import xcorr
+from mathFunc import xcorr
 
 def preEvent(quakeL,staInfos,filename='TOMODD/input/event.dat'):
     with open(filename,'w+') as f:
