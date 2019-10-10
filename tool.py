@@ -384,6 +384,7 @@ def removeBadSta(quakeLs,staLst):
                     record[1]=0
                     record[2]=0
                     print("setOne")
+
 def getQuakeLD(quakeL):
     D={}
     for quake in quakeL:
