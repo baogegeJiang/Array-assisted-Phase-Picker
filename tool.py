@@ -398,7 +398,6 @@ def divideRange(L, N):
     (subL[0:-1]+subL[1:])/2}
     return dR
 
-
 def findLatterOne(t0, tL):
     indexL=np.where(tL>t0)
     if indexL.shape[0]>0:
