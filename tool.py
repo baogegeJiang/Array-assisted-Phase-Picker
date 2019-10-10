@@ -12,7 +12,7 @@ from numba import jit
 from distaz import DistAz
 import matplotlib.pyplot as plt
 from scipy import signal
-from openpyxl import Workbook
+from openpyxl import load_workbook,Workbook
 
 rad2deg=1/np.pi*180
 def matTime2UTC(matTime,time0=719529):

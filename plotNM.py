@@ -12,6 +12,8 @@ from locate import locator
 import names
 import mapTool as mt
 import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif']=['Arial']
+plt.rcParams['font.size']=6
 staLstFile='staLst_NM_New'
 workDir='/home/jiangyr/accuratePickerV3/NM/'
 R=[35,45,96,105]#[34,42,104,112]

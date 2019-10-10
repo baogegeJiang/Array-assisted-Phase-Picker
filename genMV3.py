@@ -208,3 +208,72 @@ def genModelSoft():
     model=Model(inputs=inputs,outputs=outputA)
     model.compile(loss=lossFuncSoft, optimizer='adam')
     return model
+
+def genModelNoDeep(phase='p'):
+    in_features = 3
+    n_1 = 2000
+    n_2=1
+    n_out = 24
+    out_dim1 = 200
+    out_dim2 = 50
+    out_features1 = 100
+    out_features2 = 100
+    vectorLen=5
+    filt1=25
+    filt2=125
+    filt3=100#100
+    filt4=125
+    filt5=50#100#50#75
+    filt6=75#50
+    filt7=100
+    filt7T=100
+    filterT5=75#75
+    filterT4=50#50####50
+    filterT3=125
+    filterT2=100#100####100
+    filterT1=125#75
+    filterT0=25#50
+    acL={1:'relu',2:'tanh',3:'relu',4:'tanh',5:'relu',6:'tanh',7:'relu'}
+    #acL={1:'relu',2:'relu',3:'relu',4:'relu',5:'relu',6:'relu',7:'relu'}
+    
+    inputs=Input((n_1,n_2, in_features));
+    conv1=Conv2D(filt1,kernel_size=(10,1) ,strides=(1,1), padding='same',activation=acL[1])(inputs)
+    pool1=MaxPooling2D(pool_size=(5,1), strides=(5,1),padding='same')(conv1)
+    
+    conv2=Conv2D(filt2,kernel_size=(10,1) ,strides=(1,1), padding='same',activation=acL[2])(pool1)
+    pool2=AveragePooling2D(pool_size=(5,1), strides=(5,1), padding='same')(conv2)
+    
+    conv3=Conv2D(filt3,kernel_size=(4,1) ,strides=(1,1), padding='same',activation=acL[3])(pool2)
+    pool3=MaxPooling2D(pool_size=(2,1), strides=(2,1),padding='same')(conv3)
+    
+    conv4=Conv2D(filt4,kernel_size=(4,1) ,strides=(1,1), padding='same',activation=acL[4])(pool3)
+    pool4=AveragePooling2D(pool_size=(2,1), strides=(2,1), padding='same')(conv4)
+    
+    
+    conv5=Conv2D(filt5,kernel_size=(4,1) ,strides=(1,1), padding='same',activation=acL[5])(pool4)
+    pool5=MaxPooling2D(pool_size=(2,1), strides=(2,1),padding='same')(conv5)
+    
+    dConv4=Conv2DTranspose(filterT4,kernel_size=(3,1),strides=(2,1),padding='same',activation=acL[5])(pool5)
+    dConv4M=concatenate([dConv4,conv5],axis=3)
+    
+    dConv3=Conv2DTranspose(filterT3,kernel_size=(3,1),strides=(2,1),padding='same',activation=acL[4])(dConv4M)
+    dConv3M=concatenate([dConv3,conv4],axis=3)
+    
+    dConv2=(Conv2DTranspose(filterT2,kernel_size=(3,1),strides=(2,1),padding='same',activation=acL[3])(dConv3M))
+    dConv2M=concatenate([dConv2,conv3],axis=3)
+    
+    dConv1=(Conv2DTranspose(filterT1,kernel_size=(6,1),strides=(5,1),padding='same',activation=acL[2])(dConv2M))
+    dConv1M=concatenate([dConv1,conv2],axis=3)
+    
+    dConv0=Conv2DTranspose(filterT0,kernel_size=(6,1),strides=(5,1),padding='same',activation=acL[1])(dConv1M)
+    #relu
+    dConv0M=concatenate([dConv0,conv1],axis=3)
+
+    outputA=Conv2D(1,kernel_size=(4,1),strides=(1,1),padding='same',activation='sigmoid')(dConv0M)#,activation='sigmoid')
+    #outputA=(Softmax(axis=3)(outputA0))
+    model=Model(inputs=inputs,outputs=outputA)
+    if phase=='p':
+        model.compile(loss=lossFuncNew, optimizer='adam')
+    else:
+        model.compile(loss=lossFuncNewS, optimizer='adam')
+    return model

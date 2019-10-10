@@ -8,7 +8,7 @@ import scipy
 import numpy as np
 from numpy import cos, sin
 import os
-from genMV3 import genModel,genModelSoft
+from genMV3 import genModel,genModelSoft,genModelNoDeep
 from keras import backend as K
 from keras.models import Model
 import h5py
@@ -87,10 +87,10 @@ def trainP(N, SCN):
     matFileTest = 'SC.mat'
     matFileX = 'PX.mat'
     matFileY = 'PY.mat'
-    resFile ='resDataP_%d_%d-2-15-with.mat'%(N,SCN)
+    resFile ='resDataP_%d_%d-2-15-noDeep.mat'%(N,SCN)
     N1 = 200
     N2 = 00
-    modelFile = 'modelP_%d_%d-2-15-with'%(N,SCN)
+    modelFile = 'modelP_%d_%d-2-15-noDeep'%(N,SCN)
     train(matFileX, matFileY, matFileTest, modelFile, resFile, 'px', 'py', N, \
         N1, N2, sN0=100, sN1=300, SCN=SCN)
 
@@ -99,10 +99,10 @@ def trainS(N, SCN):
     matFileTest = 'SC.mat'
     matFileX = 'SX.mat'
     matFileY = 'SY.mat'
-    resFile = 'resDataS_%d_%d-2-15-with.mat'%(N,SCN)
+    resFile = 'resDataS_%d_%d-2-15-noDeep.mat'%(N,SCN)
     N1 = 300
     N2 = 50
-    modelFile = 'modelS_%d_%d-2-15-with'%(N,SCN)
+    modelFile = 'modelS_%d_%d-2-15-noDeep'%(N,SCN)
     train(matFileX, matFileY, matFileTest, modelFile, resFile, 'sx', 'sy', N, \
         N1, N2, sN0=200, sN1=200, SCN=SCN)
 
@@ -138,10 +138,10 @@ def getBadDataL(sacLstFile):
 
 def train(matFileX, matFileY, matFileTest, modelFile, resFile, \
         xStr, yStr, N, N1, N2, sN0=200, sN1=200, SCN=100):
-    badSacDataL,badLL=getBadDataL('badSac/fileLst')
+    badSacDataL,badLL=getBadDataL('badSac/fileLst_bak')
     logger=logging.getLogger(__name__)
     N0=N+13010
-    model = genModel(xStr[0])
+    model = genModelNoDeep(xStr[0])
     model0 = model.get_weights()
     print(model.summary())
     eN0=sN0+2000
@@ -185,7 +185,7 @@ def train(matFileX, matFileY, matFileTest, modelFile, resFile, \
     SCCount = 0
     noUse=np.ones(N+1)
     usePhase=np.zeros(N+1)
-    badY=np.zeros((1,2000))-1
+    badY=np.zeros((1,2000))-1*0
     badCount=0
     badCount1=0
     for i in range(2000):
@@ -227,7 +227,7 @@ def train(matFileX, matFileY, matFileTest, modelFile, resFile, \
             dataXIn[j,:,:,2] = dataXTest[index,(indexO+0):(indexO+2000),:,2]
             dataYIn[j,:,:,:] = (dataYTest[index,(indexO+0):(indexO+2000),0,0]).reshape([-1, 1, 1])
             j+=1
-        for j in range(SCN,SCN+50):
+        for j in range(SCN,SCN+10):
             badCount1=badCount1+1
             badI=random.choice(np.arange(len(badSacDataL)))
             #print('###### badSacIndex %d'%badI)
