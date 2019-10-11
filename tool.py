@@ -5,11 +5,10 @@ from scipy import interpolate as interp
 from obspy import UTCDateTime, taup
 import obspy
 from multiprocessing import Process, Manager
-from mathFunc import matTime2UTC, getDetec
+from mathFunc import matTime2UTC
 import os
 import re
 from glob import glob
-from numba import jit
 from distaz import DistAz
 import matplotlib.pyplot as plt
 from scipy import signal
@@ -31,6 +30,13 @@ def getYmdHMSj(date):
 
 
 class Record(list):
+    '''
+    the basic class for Record
+    it's based on python's default list
+    [staInde pTime sTime]
+    we can setByLine
+    we provide a way to copy
+    '''
     def __init__(self,staIndex=-1, pTime=-1, sTime=-1):
         super(Record, self).__init__()
         self.append(staIndex)
@@ -48,19 +54,32 @@ class Record(list):
         return Record(self[0],self[1],self[2])
     def getStaIndex(self):
         return self[0]
+    def staIndex(self):
+        return self.getStaIndex()
     def pTime(self):
         return self[1]
     def sTime(self):
         return self[2]
     def setByLine(self,line):
+        if isinstance(line,str):
+            line=line.split()
         self[0]=int(line[0])
         for i in range(1,len(self)):
             self[i]=float(line[i])
         return self
-
+    def set(self,line):
+        return self.setByLine(line)
 
 #MLI  1976/01/01 01:29:39.6 -28.61 -177.64  59.0 6.2 0.0 KERMADEC ISLANDS REGION 
 class Quake(list):
+    '''
+    a basic class for quake
+    it's baed on list class
+    the elements in list are composed by Records
+    the basic information: loc, time, ml, filename, randID
+    we use randID to distinguish close quakes
+    you can set the filename storting the waveform by yourself
+    '''
     def __init__(self, loc=[-999, -999,10], time=-1, randID=None, filename=None, ml=None):
         super(Quake, self).__init__()
         self.loc = [0,0,0]
@@ -86,21 +105,35 @@ class Quake(list):
             self.time, len(self),count, self.randID, \
             self.filename,ml,self.loc[2])
         return Summary
+    def setByLine(self,line):
+        if len(line) >= 4:
+            if len(line)>12:
+                self.loc = [float(line[1]), float(line[2]),float(line[-1])]
+            else:
+                self.loc = [float(line[1]), float(line[2]),0.]
+            if len(line)>=14:
+                self.ml=float(line[-2])
+            self.time = float(line[3])
+            self.randID=int(line[9])
+            self.filename=line[11]
+        return self
+
+    def getFilename(self):
+        dayDir = str(int(self.time/86400))+'/'
+        return dayDir+str(int(self.time))+'_'+str(self.randID)+'.mat'
+
     def append(self, addOne):
         if isinstance(addOne, Record):
             super(Quake, self).append(addOne)
         else:
             raise ValueError('should pass in a Record class')
+
     def copy(self):
         quake=Quake(loc=self.loc,time=self.time,randID=self.randID,filename=self.filename\
             ,ml=self.ml)
         for record in self:
             quake.append(record.copy())
         return quake
-
-    def getFilename(self):
-        dayDir = str(int(self.time/86400))+'/'
-        return dayDir+str(int(self.time))+'_'+str(self.randID)+'.mat'
 
     def setFromNDK(self,line):
         sec=float(line[22:26])
@@ -122,19 +155,6 @@ class Quake(list):
         self.filename = self.getFilename()
         return self
 
-    def setByLine(self,line):
-        if len(line) >= 4:
-            if len(line)>12:
-                self.loc = [float(line[1]), float(line[2]),float(line[-1])]
-            else:
-                self.loc = [float(line[1]), float(line[2]),0.]
-            if len(line)>=14:
-                self.ml=float(line[-2])
-            self.time = float(line[3])
-            self.randID=int(line[9])
-            self.filename=line[11]
-        return self
-
     def setByWLX(self,line,staInfos=None):
         self.time=UTCDateTime(line[:22]).timestamp
         self.loc=[float(line[23:29]),float(line[30:37]),float(line[38:41])]
@@ -146,7 +166,6 @@ class Quake(list):
         pTimeL=q[0].reshape(-1)
         sTimeL=q[1].reshape(-1)
         PS=q[2].reshape(-1)
-        #print(matTime2UTC(PS[0]))
         self.randID=1
         self.time=matTime2UTC(PS[0])
         self.loc=PS[1:4]
@@ -325,13 +344,15 @@ class QuakeCC(Quake):
             self.filename=line[11]
         return self
     def setByMat(self,q):
-        #0('tmpIndex', 'O'), ('name', 'O'), ('CC', 'O'), 
-        #3('mean', 'O'), ('std', 'O'), ('mul', 'O'), 
-        #6('pCC', 'O'), ('sCC', 'O'), ('pM', 'O'), 
-        #9('sM', 'O'), ('pS', 'O'), ('sS', 'O'), 
-        #12('PS', 'O'), ('pTime', 'O'), ('sTime', 'O'),
-        #15('pD', 'O'), ('sD', 'O'), ('tmpTime', 'O'), 
-        #18('oTime', 'O'), ('eTime', 'O')])
+        '''
+        0('tmpIndex', 'O'), ('name', 'O'), ('CC', 'O'), 
+        3('mean', 'O'), ('std', 'O'), ('mul', 'O'), 
+        6('pCC', 'O'), ('sCC', 'O'), ('pM', 'O'), 
+        9('sM', 'O'), ('pS', 'O'), ('sS', 'O'), 
+        12('PS', 'O'), ('pTime', 'O'), ('sTime', 'O'),
+        15('pD', 'O'), ('sD', 'O'), ('tmpTime', 'O'), 
+        18('oTime', 'O'), ('eTime', 'O')])
+        '''
         self.cc=q[2][0,0]
         self.S=q[4][0,0]
         self.M=q[3][0,0]
@@ -345,7 +366,6 @@ class QuakeCC(Quake):
         pS=q[10].reshape(-1)
         sS=q[11].reshape(-1)
         PS=q[12].reshape(-1)
-        #print(matTime2UTC(PS[0]))
         self.time=matTime2UTC(PS[0])
         self.loc=PS[1:4]
         self.ml=PS[4]
@@ -376,11 +396,12 @@ class QuakeCC(Quake):
         self.tmpName=tmpName
         self.filename=self.getFilename()
         return self
-def removeBadSta(quakeLs,staLst):
+
+def removeBadSta(quakeLs,badStaLst=[]):
     for quakeL in quakeLs:
         for quake in quakeL:
             for record in quake:
-                if record.getStaIndex() in staLst:
+                if record.getStaIndex() in badStaLst:
                     record[1]=0
                     record[2]=0
                     print("setOne")

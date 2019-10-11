@@ -2,9 +2,7 @@ import numpy as np
 from distaz import DistAz
 from obspy import UTCDateTime
 from tool import getYmdHMSj
-from numba import jit
 import matplotlib.pyplot as plt
-import os
 from mathFunc import xcorr
 
 def preEvent(quakeL,staInfos,filename='TOMODD/input/event.dat'):
@@ -29,20 +27,111 @@ def preABS(quakeL,staInfos,filename='TOMODD/input/ABS.dat'):
                 staIndex=record.getStaIndex()
                 staInfo=staInfos[staIndex]
                 if record.pTime()!=0:
-                    f.write('%s     %7.2f   %5.3f   P\n'%(staInfo['nickName'],record.pTime()-quake.time,1.0))
+                    f.write('%s     %7.2f   %5.3f   P\n'%\
+                        (staInfo['nickName'],record.pTime()-quake.time,1.0))
                 if record.sTime()!=0:
-                    f.write('%s     %7.2f   %5.3f   S\n'%(staInfo['nickName'],record.sTime()-quake.time,1.0))
+                    f.write('%s     %7.2f   %5.3f   S\n'%\
+                        (staInfo['nickName'],record.sTime()-quake.time,1.0))
 
 def preSta(staInfos,filename='TOMODD/input/station.dat'):
     with open(filename,'w+') as f:
         for staInfo in staInfos:
-            f.write('%s %7.4f %8.4f %.0f\n'%(staInfo['nickName'],staInfo['la'],staInfo['lo'],staInfo['dep']))
+            f.write('%s %7.4f %8.4f %.0f\n'\
+                %(staInfo['nickName'],staInfo['la'],staInfo['lo'],staInfo['dep']))
+
+def preDTCC(quakeL,staInfos,dTM,maxD=0.5,minSameSta=5,minPCC=0.75,minSCC=0.75,\
+    perCount=500,filename='TOMODD/input/dt.cc'):
+    N=len(quakeL)
+    with open(filename,'w+') as f:
+        for i in range(len(quakeL)):
+            print(i)
+            pTime0=quakeL[i].getPTimeL(staInfos)
+            sTime0=quakeL[i].getSTimeL(staInfos)
+            time0=quakeL[i].time
+            count=0
+            for j in range(i+1,len(quakeL)):
+                if dTM[i][j]==None:
+                    continue
+                if count>perCount*(1-i/N):
+                    break
+                if DistAz(quakeL[j].loc[0],quakeL[j].loc[1],quakeL[j].loc[0],\
+                    quakeL[j].loc[1]).getDelta()>maxD:
+                    continue
+                pTime1=quakeL[j].getPTimeL(staInfos)
+                sTime1=quakeL[j].getSTimeL(staInfos)
+                time1=quakeL[j].time
+                if len(sameSta(pTime0,pTime1))<minSameSta:
+                    continue                  
+                for dtD in dTM[i][j]:
+                    dt,maxC,staIndex,phaseType=dtD
+                    if phaseType==1 and maxC>minPCC:
+                        dt=pTime0[staIndex]-time0-(pTime1[staIndex]-time1+dt)
+                        f.write("% 9d % 9d %s %8.3f %6.4f %s\n"%(i,j,\
+                            staInfos[staIndex]['nickName'],dt,maxC*maxC,'P'))
+                        coutn=count+1
+                    if phaseType==2 and maxC>minSCC:
+                        dt=sTime0[staIndex]-time0-(sTime1[staIndex]-time1+dt)
+                        f.write("% 9d % 9d %s %8.3f %6.4f %s\n"%(i,j,\
+                            staInfos[staIndex]['nickName'],dt,maxC*maxC,'S'))
+                        coutn=count+1
+
+
+def preMod(R,nx=8,ny=8,nz=8,filename='TOMODD/MOD'):
+    with open(filename,'w+') as f:
+        vp=[5.5,5.90,  6.01,  6.56, 6.91, 8.40, 8.79, 8.88, 9.00]
+        vs=[2.4,2.67, 3.01,  4.10, 4.24, 4.50, 5.00, 5.15, 6.00]
+        x=np.zeros(nx)
+        y=np.zeros(ny)
+        z=[-150,  7.5,  15,  25, 37,  53, 90, 150,  500]
+        f.write('0.1 %d %d %d\n'%(nx,ny,nz))
+        x[0]=R[2]-5
+        x[-1]=R[3]+5
+        y[0]=R[0]-5
+        y[-1]=R[1]+5
+        x[1]=(x[0]+R[2])/2
+        x[-2]=(x[-1]+R[3])/2
+        y[1]=(y[0]+R[0])/2
+        y[-2]=(y[-1]+R[1])/2
+        x[2:-2]=np.arange(R[2],R[3]+0.001,(R[3]-R[2])/(nx-5))
+        y[2:-2]=np.arange(R[0],R[1]+0.001,(R[1]-R[0])/(ny-5))
+        #f.write("\n")
+        for i in range(nx):
+            f.write('%.4f '%x[i])
+        f.write('\n')
+        for i in range(ny):
+            f.write('%.4f '%y[i])
+        f.write('\n')
+        for i in range(nz):
+            f.write('%.4f '%z[i])
+        f.write('\n')
+
+        for i in range(nz):
+            for j in range(ny):
+                for k in range(nx):
+                    f.write('%.2f '%vp[i])
+                f.write('\n')
+
+        for i in range(nz):
+            for j in range(ny):
+                for k in range(nx):
+                    f.write('%.2f '%(vp[i]/vs[i]))
+                f.write('\n')
 
 def sameSta(timeL1,timeL2):
     return np.where(np.sign(timeL1*timeL2)>0)[0]
 
+
+
 def calDT(quake0,quake1,waveform0,waveform1,staInfos,bSec0=-2,eSec0=3,\
     bSec1=-3,eSec1=4,delta=0.02,minC=0.6,maxD=0.3,minSameSta=5):
+    '''
+    dT=[[dt,maxCC,staIndex,phaseType],....]
+    dT is a list containing the dt times between quake0 and quake1
+    dt is the travel time difference
+    maxCC is the peak value of the normalized cross-correlation 
+    staIndex is the index of the station
+    phaseType: 1 for P; 2 for S
+    '''
     pTime0=quake0.getPTimeL(staInfos)
     sTime0=quake0.getSTimeL(staInfos)
     pTime1=quake1.getPTimeL(staInfos)
@@ -94,6 +183,11 @@ def calDT(quake0,quake1,waveform0,waveform1,staInfos,bSec0=-2,eSec0=3,\
     return dT
 
 def calDTM(quakeL,waveformL,staInfos,maxD=0.3,minC=0.6,minSameSta=5):
+    '''
+    dTM is 2-D list contianing the dT infos between each two quakes
+    dTM[i][j] : dT in between quakeL[i] and quakeL[j]
+    quakeL's waveform is contained by waveformL
+    '''
     dTM=[[None for quake in quakeL]for quake in quakeL]
     for i in range(len(quakeL)):
         print(i)
@@ -185,80 +279,7 @@ def reportDTM(dTM):
     plt.show()
 
 
-def preDTCC(quakeL,staInfos,dTM,maxD=0.5,minSameSta=5,minPCC=0.75,minSCC=0.75,perCount=500,\
-    filename='TOMODD/input/dt.cc'):
-    N=len(quakeL)
-    with open(filename,'w+') as f:
-        for i in range(len(quakeL)):
-            print(i)
-            pTime0=quakeL[i].getPTimeL(staInfos)
-            sTime0=quakeL[i].getSTimeL(staInfos)
-            time0=quakeL[i].time
-            count=0
-            for j in range(i+1,len(quakeL)):
-                if dTM[i][j]==None:
-                    continue
-                if count>perCount*(1-i/N):
-                    break
-                if DistAz(quakeL[j].loc[0],quakeL[j].loc[1],quakeL[j].loc[0],quakeL[j].loc[1]).getDelta()>maxD:
-                    continue
-                pTime1=quakeL[j].getPTimeL(staInfos)
-                sTime1=quakeL[j].getSTimeL(staInfos)
-                time1=quakeL[j].time
-                if len(sameSta(pTime0,pTime1))<minSameSta:
-                    continue                  
-                for dtD in dTM[i][j]:
-                    dt,maxC,staIndex,phaseType=dtD
-                    if phaseType==1 and maxC>minPCC:
-                        dt=pTime0[staIndex]-time0-(pTime1[staIndex]-time1+dt)
-                        f.write("% 9d % 9d %s %8.3f %6.4f %s\n"%(i,j,staInfos[staIndex]['nickName'],dt,maxC*maxC,'P'))
-                        coutn=count+1
-                    if phaseType==2 and maxC>minSCC:
-                        dt=sTime0[staIndex]-time0-(sTime1[staIndex]-time1+dt)
-                        f.write("% 9d % 9d %s %8.3f %6.4f %s\n"%(i,j,staInfos[staIndex]['nickName'],dt,maxC*maxC,'S'))
-                        coutn=count+1
 
-
-def preMod(R,nx=8,ny=8,nz=8,filename='TOMODD/MOD'):
-    with open(filename,'w+') as f:
-        vp=[5.5,5.90,  6.01,  6.56, 6.91, 8.40, 8.79, 8.88, 9.00]
-        vs=[2.4,2.67, 3.01,  4.10, 4.24, 4.50, 5.00, 5.15, 6.00]
-        x=np.zeros(nx)
-        y=np.zeros(ny)
-        z=[-150,  7.5,  15,  25, 37,  53, 90, 150,  500]
-        f.write('0.1 %d %d %d\n'%(nx,ny,nz))
-        x[0]=R[2]-5
-        x[-1]=R[3]+5
-        y[0]=R[0]-5
-        y[-1]=R[1]+5
-        x[1]=(x[0]+R[2])/2
-        x[-2]=(x[-1]+R[3])/2
-        y[1]=(y[0]+R[0])/2
-        y[-2]=(y[-1]+R[1])/2
-        x[2:-2]=np.arange(R[2],R[3]+0.001,(R[3]-R[2])/(nx-5))
-        y[2:-2]=np.arange(R[0],R[1]+0.001,(R[1]-R[0])/(ny-5))
-        #f.write("\n")
-        for i in range(nx):
-            f.write('%.4f '%x[i])
-        f.write('\n')
-        for i in range(ny):
-            f.write('%.4f '%y[i])
-        f.write('\n')
-        for i in range(nz):
-            f.write('%.4f '%z[i])
-        f.write('\n')
-
-        for i in range(nz):
-            for j in range(ny):
-                for k in range(nx):
-                    f.write('%.2f '%vp[i])
-                f.write('\n')
-
-        for i in range(nz):
-            for j in range(ny):
-                for k in range(nx):
-                    f.write('%.2f '%(vp[i]/vs[i]))
-                f.write('\n')
 
 def getReloc(quakeL,filename='TOMODD/tomoDD.reloc'):
     quakeRelocL=[]
