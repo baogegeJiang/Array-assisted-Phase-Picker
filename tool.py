@@ -478,35 +478,13 @@ def getStaNameIndex(staInfos):
         staNameIndex.update({staInfos[i]['sta']: i})
     return staNameIndex
 
-def readQuakeLs(filenames, staInfos, mode='byQuake',  \
-    N=200, dH=0, isQuakeCC=False,key=None,minMul=8,tmpNameL=None):
-    if mode=='byMatDay':
-        dayMat=sio.loadmat(filenames)
-        if key ==None:
-            key=dayMat.keys()[-1]
-        #print(key)
-        dayMat=dayMat[key][-1]
-        quakeLs=list()
-        for day in dayMat:
-            day=day[-1][-1]
-            quakeL=list()
-            quakeLs.append(quakeL)
-            for q in day:
-                if not isQuakeCC:
-                    quake=Quake().setByMat(q)
-                else:
-                    quake=QuakeCC().setByMat(q)
-                if quake.time>0:
-                    if isQuakeCC:
-                        if quake.getMul()<minMul:
-                            continue
-                    quakeL.append(quake)
-        return quakeLs
-    if mode=='byMat':
-        dayMat=sio.loadmat(filenames)
-        if key == None:
-            key=dayMat.keys()[-1]
-        day=dayMat[key][-1]
+def readQuakeLs(filenames, staInfos, mode='byQuake', \
+    N=200, dH=0, isQuakeCC=False,key=None,minMul=8,\
+    tmpNameL=None):
+    '''
+    read quakeLst in different form
+    '''
+    def getQuakeLFromDay(day,isQuakeCC):
         quakeL=list()
         for q in day:
             if not isQuakeCC:
@@ -516,6 +494,25 @@ def readQuakeLs(filenames, staInfos, mode='byQuake',  \
             if quake.time>0:
                 quakeL.append(quake)
         return quakeL
+
+    if mode=='byMatDay':
+        dayMat=sio.loadmat(filenames)
+        if key ==None:
+            key=dayMat.keys()[-1]
+        dayMat=dayMat[key][-1]
+        quakeLs=list()
+        for day in dayMat:
+            day=day[-1][-1]
+            quakeLs.append(getQuakeLFromDay(day,isQuakeCC))
+        return quakeLs
+
+    if mode=='byMat':
+        dayMat=sio.loadmat(filenames)
+        if key == None:
+            key=dayMat.keys()[-1]
+        day=dayMat[key][-1]
+        return getQuakeLFromDay(day,isQuakeCC)
+        
     if mode=='byWLX':
         quakeL=[]
         with open(filenames) as f:
