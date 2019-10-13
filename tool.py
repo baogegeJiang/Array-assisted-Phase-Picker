@@ -67,7 +67,7 @@ class Record(list):
         for i in range(1,len(self)):
             self[i]=float(line[i])
         return self
-    def set(self,line):
+    def set(self,line,mode='byLine'):
         return self.setByLine(line)
 
 #MLI  1976/01/01 01:29:39.6 -28.61 -177.64  59.0 6.2 0.0 KERMADEC ISLANDS REGION 
@@ -105,18 +105,6 @@ class Quake(list):
             self.time, len(self),count, self.randID, \
             self.filename,ml,self.loc[2])
         return Summary
-    def setByLine(self,line):
-        if len(line) >= 4:
-            if len(line)>12:
-                self.loc = [float(line[1]), float(line[2]),float(line[-1])]
-            else:
-                self.loc = [float(line[1]), float(line[2]),0.]
-            if len(line)>=14:
-                self.ml=float(line[-2])
-            self.time = float(line[3])
-            self.randID=int(line[9])
-            self.filename=line[11]
-        return self
 
     def getFilename(self):
         dayDir = str(int(self.time/86400))+'/'
@@ -135,6 +123,29 @@ class Quake(list):
             quake.append(record.copy())
         return quake
 
+    def set(self,line,mode='byLine'):
+        if mode=='byLine':
+            return self.setByLine(line)
+        elif mode=='fromNDK':
+            return self.setFromNDK(line)
+        elif mode=='fromIris':
+            return self.setFromIris(line)
+        elif mode=='byWLX':
+            return self.setByWLX(line)
+        elif mode=='byMat':
+            return self.setByMat(line)
+    def setByLine(self,line):
+        if len(line) >= 4:
+            if len(line)>12:
+                self.loc = [float(line[1]), float(line[2]),float(line[-1])]
+            else:
+                self.loc = [float(line[1]), float(line[2]),0.]
+            if len(line)>=14:
+                self.ml=float(line[-2])
+            self.time = float(line[3])
+            self.randID=int(line[9])
+            self.filename=line[11]
+        return self
     def setFromNDK(self,line):
         sec=float(line[22:26])
         self.time=UTCDateTime(line[5:22]+"0.00").timestamp+sec
@@ -415,7 +426,6 @@ def getQuakeLD(quakeL):
 def divideRange(L, N):
     dL = (L[1]-L[0])/N
     subL = np.arange(0, N+1)*dL+L[0]
-    #print(subL)
     dR = {'minL': subL[0:-1], 'maxL': subL[1:], 'midL': \
     (subL[0:-1]+subL[1:])/2}
     return dR
@@ -484,13 +494,13 @@ def readQuakeLs(filenames, staInfos, mode='byQuake', \
     '''
     read quakeLst in different form to differen form
     '''
-    def getQuakeLFromDay(day,isQuakeCC):
+    def getQuakeLFromDay(day):
         quakeL=list()
         for q in day:
             if not isQuakeCC:
-                quake=Quake().setByMat(q)
+                quake=Quake().set(q,'byMat')
             else:
-                quake=QuakeCC().setByMat(q)
+                quake=QuakeCC().set(q,'byMat')
             if quake.time>0:
                 quakeL.append(quake)
         return quakeL
@@ -503,7 +513,7 @@ def readQuakeLs(filenames, staInfos, mode='byQuake', \
         quakeLs=list()
         for day in dayMat:
             day=day[-1][-1]
-            quakeLs.append(getQuakeLFromDay(day,isQuakeCC))
+            quakeLs.append(getQuakeLFromDay(day))
         return quakeLs
 
     if mode=='byMat':
@@ -511,18 +521,19 @@ def readQuakeLs(filenames, staInfos, mode='byQuake', \
         if key == None:
             key=dayMat.keys()[-1]
         day=dayMat[key][-1]
-        return getQuakeLFromDay(day,isQuakeCC)
+        return getQuakeLFromDay(day)
         
     if mode=='byWLX':
         quakeL=[]
         with open(filenames) as f:
             if not isQuakeCC:
                 for line in f.readlines():
-                    quakeL.append(Quake().setByWLX(line))
+                    quakeL.append(Quake().set(line,'byWLX'))
             else:
                 for line in f.readlines()[1:]:
-                    quakeL.append(QuakeCC().setByWLX(line,tmpNameL))
+                    quakeL.append(QuakeCC().set(line,'byWLX'))
         return quakeL
+
     with open(filenames) as f:
         lines = f.readlines()
         quakeLs = list()
@@ -538,14 +549,14 @@ def readQuakeLs(filenames, staInfos, mode='byQuake', \
                         quake=QuakeCC()
                     else:
                         quake = Quake()
-                    quake.setByLine(line)
+                    quake.set(line,'byLine')
                     quakeL.append(quake)
                     continue
                 if isQuakeCC:
                     record=RecordCC()
                 else:
                     record=Record()
-                quake.append(record.setByLine(line))
+                quake.append(record.set(line,'byLine'))
             return quakeLs
         if mode == 'bySta':
             staArrivalP = [[] for i in range(N)]
@@ -588,7 +599,7 @@ def readQuakeLs(filenames, staInfos, mode='byQuake', \
             for i in range(0,len(lines),5):
                 line=lines[i]
                 quake=Quake()
-                quake=quake.setFromNDK(line)
+                quake=quake.set(line,'fromNDK')
                 time1=int(quake.time/86400)
                 print(time1)
                 if time1>time0:
@@ -602,7 +613,7 @@ def readQuakeLs(filenames, staInfos, mode='byQuake', \
             for i in range(0,len(lines)):
                 line=lines[i]
                 quake=Quake()
-                quake=quake.setFromIris(line)
+                quake=quake.set(line,'fromIris')
                 time1=int(quake.time/86400)
                 print(time1)
                 if time1>time0:
@@ -613,12 +624,13 @@ def readQuakeLs(filenames, staInfos, mode='byQuake', \
 
 
 
-def readQuakeLsByP(filenamesP, staInfos, mode='byQuake',  N=200, dH=0,key=None,isQuakeCC=False):
+def readQuakeLsByP(filenamesP, staInfos, mode='byQuake',  N=200, dH=0,key=None\
+    ,isQuakeCC=False):
     quakeLs=[]
     for file in glob(filenamesP):
-        quakeLs=quakeLs+readQuakeLs(file, staInfos, mode=mode,  N=N, dH=dH,key=key,isQuakeCC=isQuakeCC)
+        quakeLs=quakeLs+readQuakeLs(file, staInfos, mode=mode,  N=N, dH=dH,\
+            key=key,isQuakeCC=isQuakeCC)
     return quakeLs
-
 
 def compareTime(timeL, timeL0, minD=2):
     timeL = np.sort(np.array(timeL))
@@ -842,9 +854,11 @@ def _genTaupTimeM(taupDict, index, N, taupM, resL):
         for degIndex in range(degN):
             deg = taupDict['deg'][degIndex]
             if degIndex==0:
-                print(depIndex, degIndex, getEarliest(taupM.get_travel_times(dep, deg, ['p', 'P', 'PP', 'pP'])))
-            resL.append([getEarliest(taupM.get_travel_times(dep, deg, ['p', 'P', 'PP', 'pP'])), \
-            getEarliest(taupM.get_travel_times(dep, deg, ['s', 'S', 'SS', 'sS']))])
+                print(depIndex, degIndex, getEarliest(taupM.get_travel_times\
+                    (dep, deg, ['p', 'P', 'PP', 'pP'])))
+            resL.append([getEarliest(taupM.get_travel_times(dep, deg, \
+                ['p', 'P', 'PP', 'pP'])), getEarliest(taupM.get_travel_times\
+            (dep, deg, ['s', 'S', 'SS', 'sS']))])
 
 def getEarliest(arrivals):
         time=10000000
@@ -854,13 +868,22 @@ def getEarliest(arrivals):
         for arrival in arrivals:
             time = min(time, arrival.time)
         return time
-#GPS: POSITION: N41:45:04.50 E103:23:45.46
+
 def validMean(vL):
     vM=np.median(vL)
     vD=vL.std()
     vLst=np.where(np.abs(vL-vM)<10*vD)
     vL=vL[vLst]
     return vL
+
+'''
+tool for read data recorder logs
+to get location from gps info
+getLocByLog
+getLocByLogs
+getLocByLogsP
+'''
+#GPS: POSITION: N41:45:04.50 E103:23:45.46
 def getLocByLog(filename):
     p=r"GPS: POSITION.{36}"
     if not os.path.exists(filename):
@@ -868,8 +891,8 @@ def getLocByLog(filename):
     with open(filename) as f:
         lines=f.read()
         pRe=re.compile(p)
-        laL=[];
-        loL=[];
+        laL=[]
+        loL=[]
         zL=[]
         for line in pRe.findall(lines):
             EW=1
@@ -891,16 +914,16 @@ def getLocByLog(filename):
         loL=validMean(loL)
         zL=validMean(zL)
     if len(laL)>0 and len(loL)>0 and len(zL)>0:
-        return laL.mean(),loL.mean(),laL.std(),loL.std(),zL.mean(),zL.std()
+        return laL.mean(), loL.mean(), laL.std(), loL.std(), zL.mean(), zL.std()
     else:
-        return 999,999,999,999,999,999
+        return 999, 999, 999, 999, 999, 999
 
 def getLocByLogs(filenames):
     laL=[]
     loL=[]
     zL=[]
     for filename in filenames:
-        la,lo,laD,loD,z,zD = getLocByLog(filename)
+        la, lo, laD, loD, z, zD = getLocByLog(filename)
         if laD>1e-3 or loD>1e-3:
             print('RMS too large', laD, loD)
             continue
@@ -922,12 +945,16 @@ def getLocByLogsP(p):
         filenames.append(file)
     return getLocByLogs(filenames)
 
-def writeMFileInfo(f,mFile,dayDir,staName):
-    comp=['BH','BH','BH']
-    fileIndex=mFile[0:6]+'_'+comp[int(mFile[-3])-1]
-    f.write("%s %s %s\n"%(staName,fileIndex,dayDir))
+'''
+this part is designed for getting sta info (loc and file path)
+'''
+
 
 def getStaAndFileLst(dirL,filelstName,staFileName):
+    def writeMFileInfo(f,mFile,dayDir,staName):
+        comp=['BH','BH','BH']
+        fileIndex=mFile[0:6]+'_'+comp[int(mFile[-3])-1]
+        f.write("%s %s %s\n"%(staName,fileIndex,dayDir))
     staLst={}
     with open(filelstName,'a') as f:
         for Dir in dirL:
