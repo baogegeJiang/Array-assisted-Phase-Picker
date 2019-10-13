@@ -9,9 +9,7 @@ import sacTool
 from tool import Record, Quake, QuakeCC,getYmdHMSj
 from multiprocessing import Process, Manager
 import threading
-from threading import Thread
 import time
-from locate import locator
 import math
 from mathFunc import getDetec
 import mapTool as mt
@@ -56,7 +54,7 @@ def processX(X, rmean=True, normlize=True, reshape=True):
     return X
 
 
-def originFileName(net, station, comp, YmdHMSJ, dirL=['D:\\data\\after2\\']):
+def originFileName(net, station, comp, YmdHMSJ, dirL=['data/']):
     #dir='tmpSacFile/'
     sacFileNames = list()
     Y = YmdHMSJ
@@ -69,10 +67,11 @@ def originFileName(net, station, comp, YmdHMSJ, dirL=['D:\\data\\after2\\']):
     return sacFileNames
 
 class sta(object):
-    def __init__(self, net, station, day, modelL=None, staTimeM=None, loc=None, comp=\
-        ['BHE','BHN','BHZ'], getFileName=originFileName, freq=[-1, -1], mode='mid', isClearData=False,\
-        taupM=tool.quickTaupModel(),isPre=True,delta0=0.02,R=[-90,90,\
-    -180,180]):
+    def __init__(self, net, station, day, modelL=None, staTimeM=None,\
+     loc=None, comp=['BHE','BHN','BHZ'], getFileName=originFileName, \
+     freq=[-1, -1], mode='mid', isClearData=False,\
+     taupM=tool.quickTaupModel(),isPre=True,delta0=0.02,R=[-91,91,\
+    -181,181]):
         self.net = net
         self.loc = loc
         self.station = station
@@ -101,9 +100,9 @@ class sta(object):
                 minValueL=[0.2, 0.2]
             minDeltaL=[500, 750]
             for i in range(len(modelL)):
-                #print(np.where(predictLongData(modelL[i], self.data.data, indexL=indexLL[i])>0.25)[0].size)
-                tmpL = getDetec(predictLongData(modelL[i], self.data.data, indexL=indexLL[i]), \
-                    minValue=minValueL[i], minDelta = minDeltaL[i])
+                tmpL = getDetec(predictLongData(modelL[i], self.data.data,\
+                 indexL=indexLL[i]), minValue=minValueL[i], minDelta =\
+                  minDeltaL[i])
                 self.timeL.append(tmpL[0])
                 self.vL.append(tmpL[1])
             self.pairD = self.getPSPair()
@@ -373,67 +372,6 @@ def __associateSta(quakeL, staL, aMat, staTimeML, startSec, endSec, \
                     quakeL.append(quake)
     return quakeL
 
-
-def plotRes(staL, quake, filename=None):
-    colorStr='br'
-    for record in quake:
-        color=0
-        pTime=record[1]
-        sTime=record[2]
-        staIndex=record[0]
-        if staIndex>100:
-            color=1
-        print(staIndex,pTime, sTime)
-        st=quake.time-10
-        et=sTime+10
-        if sTime==0:
-            et=pTime+30
-        pD=(pTime-quake.time)%1000
-        if pTime ==0:
-            pD = ((sTime-quake.time)/1.73)%1000
-        if staL[staIndex].data.data.size<100:
-            continue
-        print(st, et, staL[staIndex].data.delta)
-        timeL=np.arange(st, et, staL[staIndex].data.delta)
-        #data = staL[staIndex].data.getDataByTimeL(timeL)
-        data=staL[staIndex].data.getDataByTimeLQuick(timeL)
-        if timeL.shape[0] != data.shape[0]:
-            print('not same length for plot')
-            continue
-        if timeL.size<1:
-            print("no timeL for plot")
-            continue
-        plt.plot(timeL, data[:, 2]/data[:,2].max()+pD,colorStr[color])
-        plt.text(timeL[0],pD+0.5,staL[staIndex].station)
-        if pTime>0:
-            plt.plot([pTime, pTime], [pD+2, pD-2], 'g')
-            if isinstance(quake,QuakeCC):
-                plt.text(pTime+1,pD+0.5,'%.2f'%record.getPCC())
-        if sTime >0:
-            plt.plot([sTime, sTime], [pD+2, pD-2], 'k')
-            if isinstance(quake,QuakeCC):
-                plt.text(sTime+1,pD+0.5,'%.2f'%record.getSCC())
-    if isinstance(quake,QuakeCC):
-        plt.title('%s %.3f %.3f %.3f cc:%.3f' % (obspy.UTCDateTime(quake.time).\
-            ctime(), quake.loc[0], quake.loc[1],quake.loc[2],quake.cc))
-    else:
-        plt.title('%s %.3f %.3f %.3f' % (obspy.UTCDateTime(quake.time).\
-            ctime(), quake.loc[0], quake.loc[1],quake.loc[2]))
-    if filename==None:
-        plt.show()
-    if filename!=None:
-        dayDir=os.path.dirname(filename)
-        if not os.path.exists(dayDir):
-            os.mkdir(dayDir)
-        plt.savefig(filename)
-        plt.close()
-
-def plotResS(staL,quakeL, outDir='output/'):
-    for quake in quakeL:
-        filename=outDir+'/'+quake.filename[0:-3]+'png'
-        #filename=outDir+'/'+str(quake.time)+'.jpg'
-        plotRes(staL,quake,filename=filename)
-
 def getStaTimeL(staInfos, aMat,taupM=tool.quickTaupModel()):
     #manager=Manager()
     #staTimeML=manager.list()
@@ -574,6 +512,67 @@ def getStaLByQuake(staInfos, aMat, staTimeML, modelL,quake,\
             [0.01, 15], getFileName, taupM, mode,isPre=isPre,delta0=delta0)
     return staL
 
+
+##plot part
+def plotRes(staL, quake, filename=None):
+    colorStr='br'
+    for record in quake:
+        color=0
+        pTime=record[1]
+        sTime=record[2]
+        staIndex=record[0]
+        if staIndex>100:
+            color=1
+        print(staIndex,pTime, sTime)
+        st=quake.time-10
+        et=sTime+10
+        if sTime==0:
+            et=pTime+30
+        pD=(pTime-quake.time)%1000
+        if pTime ==0:
+            pD = ((sTime-quake.time)/1.73)%1000
+        if staL[staIndex].data.data.size<100:
+            continue
+        print(st, et, staL[staIndex].data.delta)
+        timeL=np.arange(st, et, staL[staIndex].data.delta)
+        #data = staL[staIndex].data.getDataByTimeL(timeL)
+        data=staL[staIndex].data.getDataByTimeLQuick(timeL)
+        if timeL.shape[0] != data.shape[0]:
+            print('not same length for plot')
+            continue
+        if timeL.size<1:
+            print("no timeL for plot")
+            continue
+        plt.plot(timeL, data[:, 2]/data[:,2].max()+pD,colorStr[color])
+        plt.text(timeL[0],pD+0.5,staL[staIndex].station)
+        if pTime>0:
+            plt.plot([pTime, pTime], [pD+2, pD-2], 'g')
+            if isinstance(quake,QuakeCC):
+                plt.text(pTime+1,pD+0.5,'%.2f'%record.getPCC())
+        if sTime >0:
+            plt.plot([sTime, sTime], [pD+2, pD-2], 'k')
+            if isinstance(quake,QuakeCC):
+                plt.text(sTime+1,pD+0.5,'%.2f'%record.getSCC())
+    if isinstance(quake,QuakeCC):
+        plt.title('%s %.3f %.3f %.3f cc:%.3f' % (obspy.UTCDateTime(quake.time).\
+            ctime(), quake.loc[0], quake.loc[1],quake.loc[2],quake.cc))
+    else:
+        plt.title('%s %.3f %.3f %.3f' % (obspy.UTCDateTime(quake.time).\
+            ctime(), quake.loc[0], quake.loc[1],quake.loc[2]))
+    if filename==None:
+        plt.show()
+    if filename!=None:
+        dayDir=os.path.dirname(filename)
+        if not os.path.exists(dayDir):
+            os.mkdir(dayDir)
+        plt.savefig(filename)
+        plt.close()
+
+def plotResS(staL,quakeL, outDir='output/'):
+    for quake in quakeL:
+        filename=outDir+'/'+quake.filename[0:-3]+'png'
+        #filename=outDir+'/'+str(quake.time)+'.jpg'
+        plotRes(staL,quake,filename=filename)
 
 def plotQuakeCCDis(quakeCCLs,quakeRefL,output='quakeDis.png',cmd='.r',markersize=0.8,\
     alpha=0.3,R=None,topo=None,m=None,staInfos=None,minSta=8,minCover=0.8,\

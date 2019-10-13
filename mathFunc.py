@@ -105,3 +105,12 @@ def cmax_bak(a,tmin,winL,laout,aM):
     for i in indexL:
         a[max(i-winL,0):i]=np.fmax(a[max(i-winL,0):i],a[i])
     aM[:laout]+=a[:laout]
+
+def CEPS(x):
+    #sx=fft(x);%abs(fft(x)).^2;
+    #logs=log(sx);
+    #y=abs(fft(logs(1:end)));
+    spec=np.fft.fft(x)
+    logspec=np.log(spec*np.conj(spec))
+    y=abs(np.fft.ifft(logspec))
+    return y
