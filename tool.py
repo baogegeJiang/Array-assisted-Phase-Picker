@@ -482,7 +482,7 @@ def readQuakeLs(filenames, staInfos, mode='byQuake', \
     N=200, dH=0, isQuakeCC=False,key=None,minMul=8,\
     tmpNameL=None):
     '''
-    read quakeLst in different form
+    read quakeLst in different form to differen form
     '''
     def getQuakeLFromDay(day,isQuakeCC):
         quakeL=list()
