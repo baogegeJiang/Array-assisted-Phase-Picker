@@ -466,6 +466,13 @@ class quickTaupModel:
     def get_orign_times(self, pIndex, sIndex, delta):
         return pIndex-self.interpO((sIndex-pIndex)*delta)/delta
 
+def getQuakeInfoL(quakeL,loc0=np.array([37.8,140,0])):
+    PS=np.zeros((len(quakeL),5))
+    for i in range(len(quakeL)):
+        PS[i,0]=quakeL[i].time
+        PS[i,1:4]=quakeL[i].loc-loc0
+        PS[i,4]=quakeL[i].ml
+    return PS
 
 def saveQuakeLs(quakeLs, filename,mod='o'):
     with open(filename, 'w') as f:
@@ -948,8 +955,6 @@ def getLocByLogsP(p):
 '''
 this part is designed for getting sta info (loc and file path)
 '''
-
-
 def getStaAndFileLst(dirL,filelstName,staFileName):
     def writeMFileInfo(f,mFile,dayDir,staName):
         comp=['BH','BH','BH']
@@ -1301,6 +1306,8 @@ def selectRecord(quake,maxDT=35):
             record[1]=0.0
             record[2]=0.0
     return quake
+
+
 def preGan(waveformL,maxCount=10000,indexL=np.arange(-200,200)):
     realFile='gan/input/waveform4.mat'
     resFile='gan/output/genWaveform.mat'
@@ -1358,18 +1365,12 @@ def plotGan():
     plt.savefig(outDir+'/fake.png')
     plt.close()
 
-def getQuakeInfoL(quakeL,loc0=np.array([37.8,140,0])):
-    PS=np.zeros((len(quakeL),5))
-    for i in range(len(quakeL)):
-        PS[i,0]=quakeL[i].time
-        PS[i,1:4]=quakeL[i].loc-loc0
-        PS[i,4]=quakeL[i].ml
-    return PS
 def findNear(time,timeL,maxD=5):
     if np.abs(timeL-time).min()<maxD:
         return np.abs(timeL-time).argmin()
     else:
         return -1
+
 def compareQuakeL(quakeL1, quakeL2,recordF=None):
     PS1=getQuakeInfoL(quakeL1)
     PS2=getQuakeInfoL(quakeL2)
@@ -1388,6 +1389,7 @@ def compareQuakeL(quakeL1, quakeL2,recordF=None):
                     index,PS1[i,0],PS1[i,0]-PS2[index,0],PS1[i,1]-PS2[index,1],\
                     PS1[i,2]-PS2[index,2],quakeL1[i].cc,quakeL2[index].cc))
     return h1,h2,hh
+
 def onlyQuake(quakeL,quakeRefL):
     qL=[]
     for quake in quakeL:
@@ -1399,6 +1401,7 @@ def onlyQuake(quakeL,quakeRefL):
         if isM:
             qL.append(quake)
     return qL
+
 def analysisMFT(quakeL1,quakeL2,quakeRefL,filename='wlx/MFTCompare.png',recordName='tmp.res'):
     quakeL1=onlyQuake(quakeL1,quakeRefL)
     quakeL2=onlyQuake(quakeL2,quakeRefL)
@@ -1820,9 +1823,6 @@ def plotWaveform(x0,y0,y,delta=0.02,figName='test.eps',phase='p',text='(a)'):
     plt.text(1,2.95,text)
     plt.savefig(figName)
     plt.close()
-
-
-
 
 def plotTestOutput(fileName='resDataP_320000_100-2-15',phase='p',outDir='NM/testFig/',N=100):
     data=sio.loadmat(fileName)
