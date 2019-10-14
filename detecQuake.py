@@ -83,7 +83,7 @@ class sta(object):
             print('skip')
         else:
             self.data = getDataByFileName(self.getSacFileNamesL\
-                (getFileName=getFileName), freq=freq,delta0=delta0,maxA=2e2)
+                (getFileName=getFileName), freq=freq,delta0=delta0,maxA=2e9)
         #print(len(sta.data.data))
         self.timeL = list()
         self.vL = list()
@@ -383,13 +383,15 @@ def getStaTimeL(staInfos, aMat,taupM=tool.quickTaupModel()):
 
 def getSta(staL,i, nt, st, date, modelL, staTimeM, loc, \
         freq,getFileName,taupM, mode,isPre=True,R=[-90,90,\
-    -180,180]):
+    -180,180],comp=['BHE','BHN','BHZ']):
     staL[i] = sta(nt, st, date, modelL, staTimeM, loc, \
-            freq=freq, getFileName=getFileName, taupM=taupM, mode=mode,isPre=isPre,R=R)
+            freq=freq, getFileName=getFileName, taupM=taupM, \
+            mode=mode,isPre=isPre,R=R,comp=comp)
 
 
-def getStaL(staInfos, aMat, staTimeML, modelL, date, getFileName=originFileName,\
-    taupM=tool.quickTaupModel(), mode='mid', N=5,isPre=True,f=[2, 15],R=[-90,90,\
+def getStaL(staInfos, aMat, staTimeML, modelL, date, \
+    getFileName=originFileName,taupM=tool.quickTaupModel(), \
+    mode='mid', N=5,isPre=True,f=[2, 15],R=[-90,90,\
     -180,180]):
     staL=[None for i in range(len(staInfos))]
     threads = list()
@@ -398,9 +400,10 @@ def getStaL(staInfos, aMat, staTimeML, modelL, date, getFileName=originFileName,
         nt = staInfo['net']
         st = staInfo['sta']
         loc = [staInfo['la'],staInfo['lo']]
+        comp=staInfo['comp']
         print('process on sta: ',i)
         getSta(staL, i, nt, st, date, modelL, staTimeML[i], loc, \
-            f, getFileName, taupM, mode,isPre=isPre,R=R)
+            f, getFileName, taupM, mode,isPre=isPre,R=R,comp=comp)
     return staL
     for i in range(len(threads)):
         print('process on sta: ',i)

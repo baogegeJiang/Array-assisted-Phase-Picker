@@ -1,7 +1,9 @@
 import torch
 import numpy as np
 import time
-
+'''
+this module is designed to calculate correlation and weak-max by torch
+'''
 nptype=np.float32
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 ttype=torch.cuda.FloatTensor
@@ -26,7 +28,7 @@ def calCC(aT,bT):
 
 def torchcorr(a,b,mul=10):
     '''
-    use spectrum to calculate cross-correlation
+    use fft to calculate cross-correlation
     when to do on a long data, the precision is worth attention
     '''
     la=a.shape[0]
@@ -60,6 +62,9 @@ def torchcorr(a,b,mul=10):
 
 
 def torchcorrnn(a,b):
+    '''
+    directly calculate cross-correlation based on torch.nn.functional.conv1d
+    '''
     la=a.shape[0]
     lb=b.shape[0]
     if not isinstance(a,torch.Tensor):
