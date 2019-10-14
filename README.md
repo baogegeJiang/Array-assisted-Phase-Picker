@@ -13,7 +13,7 @@ As we developed this program in our research, it also contains many other functi
 
 ## 1、Improved phaseNet and array strategy  
 
-Needed package in this part: numpy, numba, obspy, h5py, scipy,matplotlib, openpyxl, tensorflow-gpu,(optional: basemap, netCDF4, lxml, pykml,pycpt). And pycpt is not available on open source, then you can install it via:
+Needed package in this part: numpy, numba, obspy, h5py, scipy,matplotlib, openpyxl, tensorflow-gpu,keras(optional: basemap, netCDF4, lxml, pykml,pycpt). And pycpt is not available on open source, then you can install it via:
 ```
 pip install https://github.com/j08lue/pycpt/archive/master.zip
 ```
