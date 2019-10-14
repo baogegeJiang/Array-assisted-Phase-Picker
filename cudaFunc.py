@@ -1,10 +1,12 @@
 import torch
 import numpy as np
 import time
+
+nptype=np.float32
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 ttype=torch.cuda.FloatTensor
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
-nptype=np.float32
+
 def calAS(a,lb):
     la=a.size
     aR=torch.tensor(a)
@@ -23,7 +25,10 @@ def calCC(aT,bT):
     
 
 def torchcorr(a,b,mul=10):
-    # when to do on a long data, the precision is worth attention
+    '''
+    use spectrum to calculate cross-correlation
+    when to do on a long data, the precision is worth attention
+    '''
     la=a.shape[0]
     lb=b.shape[0]
     if not b.dtype==nptype:
