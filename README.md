@@ -100,3 +100,7 @@ for date in range(int(bSec),int(eSec),86400):
 ```
 
 then run this script you can detect earthquakes in your data
+
+## Reference:  
+Zhu W, Beroza G C. PhaseNet: a deep-neural-network-based seismic arrival-time picking method. Geophys J Int, 2018, 216(1): 261-273.  
+Jiang Y R, Ning J Y. Automatic detection of seismic body-wave phases and determination of their arrival times based on support vector machine(in Chinese). Chinese J Geophys, 2019, 62(1): 361-373.  
