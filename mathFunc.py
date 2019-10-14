@@ -2,6 +2,7 @@ import numpy as np
 from numba import jit,float32, int64
 import scipy.signal  as signal
 nptype=np.float32
+rad2deg=1/np.pi*180
 @jit
 def xcorr(a,b):
     la=a.size

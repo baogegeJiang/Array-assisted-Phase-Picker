@@ -5,7 +5,7 @@ from scipy import interpolate as interp
 from obspy import UTCDateTime, taup
 import obspy
 from multiprocessing import Process, Manager
-from mathFunc import matTime2UTC
+from mathFunc import matTime2UTC,rad2deg
 import os
 import re
 from glob import glob
@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 from scipy import signal
 from openpyxl import Workbook
 
-rad2deg=1/np.pi*180
 
 def getYmdHMSj(date):
     YmdHMSj = {}
@@ -31,9 +30,9 @@ def getYmdHMSj(date):
 
 class Record(list):
     '''
-    the basic class for Record
+    the basic class 'Record' used for single station's P and S record
     it's based on python's default list
-    [staInde pTime sTime]
+    [staIndex pTime sTime]
     we can setByLine
     we provide a way to copy
     '''
@@ -73,12 +72,15 @@ class Record(list):
 #MLI  1976/01/01 01:29:39.6 -28.61 -177.64  59.0 6.2 0.0 KERMADEC ISLANDS REGION 
 class Quake(list):
     '''
-    a basic class for quake
+    a basic class 'Quake' used for quake's information and station records
     it's baed on list class
     the elements in list are composed by Records
     the basic information: loc, time, ml, filename, randID
-    we use randID to distinguish close quakes
-    you can set the filename storting the waveform by yourself
+    we use randID to distinguish time close quakes
+    you can set the filename storting the waveform by yourself in .mat form
+    otherwise, we would generate the file like dayNum/time_randID.mat
+
+    we provide way for set by line/WLX/Mat and from IRIS/NDK
     '''
     def __init__(self, loc=[-999, -999,10], time=-1, randID=None, filename=None, ml=None):
         super(Quake, self).__init__()
@@ -206,6 +208,9 @@ class Quake(list):
             ,int(line[13]),m+int(sec/60),sec%60).timestamp
 
     def calCover(self,staInfos):
+        '''
+        calculate the radiation coverage
+        '''
         coverL=np.zeros(360)
         for record in self:
             staIndex= int(record[0])
@@ -287,6 +292,11 @@ class RecordCC(Record):
 
 
 class QuakeCC(Quake):
+    '''
+    expand the basic class Quake for storing the quake result 
+    of MFT and WMFT
+    the basic information include more: cc,M,S,tmpName
+    '''
     def __init__(self, cc=-9, M=-9, S=-9, loc=[-999, -999,10],  time=-1, randID=None, \
         filename=None,tmpName=None,ml=None):
         super(Quake, self).__init__()
@@ -316,6 +326,9 @@ class QuakeCC(Quake):
         return (self.cc-self.M)/self.S
 
     def calCover(self,staInfos,minCC=0.5):
+        '''
+        calculate the radiation coverage which have higher CC than minCC
+        '''
         coverL=np.zeros(360)
         for record in self:
             if (record.pTime()>0 or record.sTime())>0 \
@@ -442,7 +455,9 @@ class arrival(object):
 
 
 class quickTaupModel:
-    """docstring for quickTaupModel"""
+    '''
+    pre-calculated taup model for quick usage
+    '''
     def __init__(self, modelFile='iaspTaupMat'):
         matload = sio.loadmat(modelFile)
         self.interpP = interp.interp2d(matload['dep'].reshape([-1]),\
