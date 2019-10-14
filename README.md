@@ -11,8 +11,9 @@ it has three fundamental parts：
 
 As we developed this program in our research, it also contains many other functions.  if not needed, you can ignore the other part. Any way, the reorgainizing work is going on and we would try to give a better way to use for users who need this kind of functions. 
 
-##1、Improved phaseNet and array strategy
-needed package: 
+##1、Improved phaseNet and array strategy  
+
+needed package: numpy, obspy, h5py, scipy,matplotlib, openpyxl, tensorflow-gpu, basemap, netCDF4, lxml, pykml,pycpt
 phaseNet is based on ZhuW‘s paper and we adopted it for continuous waveform. the array strategy is based on Jiang Y and Ning J's papaer. As we provide some pre-trained model, you can directly use our program on your data.  
 in general, you need to provide the following things before runing our program:  
 (1) station information list file:  
@@ -40,7 +41,7 @@ we give the detail in the script
 ```python
 import os
 import detecQuake
-import trainPS
+import trainPSV2 as trainPS
 import sacTool
 from imp import reload
 from obspy import UTCDateTime
@@ -50,7 +51,7 @@ import names
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-workDir='/home/jiangyr/accuratePickerV3/NM/'# workDir: the dir to save the results
+workDir='/home/jiangyr/accuratePickerV3/testNew/'# workDir: the dir to save the results
 staLstFile='staLst_NM_New'#station list file
 bSec=UTCDateTime(2015,6,1).timestamp#begain date
 eSec=UTCDateTime(2015,10,1).timestamp# end date
