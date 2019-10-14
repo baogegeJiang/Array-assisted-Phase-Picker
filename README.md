@@ -13,7 +13,11 @@ As we developed this program in our research, it also contains many other functi
 
 ## 1、Improved phaseNet and array strategy  
 
-needed package: numpy, obspy, h5py, scipy,matplotlib, openpyxl, tensorflow-gpu, basemap, netCDF4, lxml, pykml,pycpt  
+Needed package in this part: numpy, obspy, h5py, scipy,matplotlib, openpyxl, tensorflow-gpu,(optional: basemap, netCDF4, lxml, pykml,pycpt). and pycpt is not available on oepn source, then you can install it via:
+```
+pycpt: pip install https://github.com/j08lue/pycpt/archive/master.zip
+```
+
 phaseNet is based on ZhuW‘s paper and we adopted it for continuous waveform. the array strategy is based on Jiang Y and Ning J's papaer. As we provide some pre-trained model, you can directly use our program on your data.  
 in general, you need to provide the following things before runing our program:  
 (1) station information list file:  

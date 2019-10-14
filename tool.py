@@ -5,7 +5,7 @@ from scipy import interpolate as interp
 from obspy import UTCDateTime, taup
 import obspy
 from multiprocessing import Process, Manager
-from mathFunc import matTime2UTC,rad2deg
+from mathFunc import matTime2UTC,rad2deg, getDetec
 import os
 import re
 from glob import glob

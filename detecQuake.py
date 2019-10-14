@@ -12,7 +12,12 @@ import threading
 import time
 import math
 from mathFunc import getDetec
-import mapTool as mt
+try:
+    from mapTool import plotQuakeCCDis, plotQuakeDis
+except:
+    print('warning cannot load mapTool')
+else:
+    pass
 from distaz import DistAz
 
 os.environ["MKL_NUM_THREADS"] = "10"
@@ -63,7 +68,6 @@ def originFileName(net, station, comp, YmdHMSJ, dirL=['data/']):
             '*'+comp
         for file in glob(sacFileNamesStr):
             sacFileNames.append(file)
-    #print(sacFileNames)
     return sacFileNames
 
 class sta(object):
@@ -417,106 +421,65 @@ def getStaL(staInfos, aMat, staTimeML, modelL, date, \
         print('sta: ',i,' completed')
          
     return staL
+'''
 
-def plotQuakeDis(quakeLs,output='quakeDis.png',cmd='.b',markersize=0.8,\
-    alpha=0.3,R=None,topo=None,m=None,staInfos=None,minSta=8,minCover=0.8,\
-    faultFile="Chinafault_fromcjw.dat",mul=1,loL0=[],laL0=[],isBox=False):
-    la=[]
-    lo=[]
-    dep=[]
-    mlL=[]
-    plt.close()
-    plt.figure(figsize=[12,8])
-    for quakeL in quakeLs:
-        for quake in quakeL:
-            if len(quake)<minSta:
-                continue
-            if staInfos!=None:
-                if quake.calCover(staInfos)<minCover:
-                    continue
-            ml=0
-            if quake.ml !=None:
-                if quake.ml>-2:
-                    ml=quake.ml
-            la.append(quake.loc[0])
-            lo.append(quake.loc[1])
-            dep.append(quake.loc[2])
-            mlL.append(ml)
-    la=np.array(la)
-    lo=np.array(lo)
-    dep=np.array(dep)
-    mlL=np.array(mlL)
-    if R==None:
-        R=[la.min(),la.max(),lo.min(),lo.max()]
-    #print(R)
+'''
+def showExample(filenameL,modelL,delta=0.02,t=[]):
+    data=getDataByFileName(filenameL,freq=[2,15])
+    data=data.data[:2000*50]
     
-    if m==None:
-        m=mt.genBaseMap(R=R,topo=topo)
-    if not staInfos == None:
-        sla=[]
-        slo=[]
-        sdep=[]
-        for staInfo in staInfos:
-            sla.append(staInfo['la'])
-            slo.append(staInfo['lo'])
-            sdep.append(staInfo['dep'])
-        sla=np.array(sla)
-        slo=np.array(slo)
-        sdep=np.array(sdep)
-        hS,=mt.plotOnMap(m,sla,slo,'^r',markersize=5,alpha=1,linewidth=1)
-    faultL=mt.readFault(faultFile)
-    hF=None
-    for fault in faultL:
-        if fault.inR(R):
-            hFTmp,=fault.plot(m)
-            if hFTmp!=None:
-                hF=hFTmp
-    if len(laL0)>1:
-        hC,=mt.plotOnMap(m,laL0,loL0,'ok',markersize=2,mfc=[1,1,1])
-    if isBox:
-        laLB0=[38.7,42.2]
-        loLB0=[97.5,103.8]
-        laLB=np.array([laLB0[0],laLB0[0],laLB0[1],laLB0[1],laLB0[0]])
-        loLB=np.array([loLB0[1],loLB0[0],loLB0[0],loLB0[1],loLB0[1]])
-        mt.plotOnMap(m,laLB,loLB,'r',linewidth=3,markersize=3)
-    hQ,=mt.plotOnMap(m,la,lo,cmd,markersize,alpha)
-    #mt.scatterOnMap(m,la,lo,s=np.exp(mlL/1.5)*mul,alpha=alpha,c=np.array([1,0,0]))
-    parallels = np.arange(0.,90,2.)
+    #i0=int(750/delta)
+    #i1=int(870/delta)
+    #plt.specgram(np.sign(data[i0:i1,1])*(np.abs(data[i0:i1,1])**0.5),NFFT=200,Fs=50,noverlap=190)
+    data/=data.max()/2
+    #plt.colorbar()
+    #plt.show()
+    plt.close()
+    yL=[predictLongData(modelL[i],data) for i in range(2)]
+    timeL=np.arange(data.shape[0])*delta-720
+    #print(data.shape,timeL.shape)
+    for i in range(3):
+        plt.plot(timeL,np.sign(data[:,i])*(np.abs(data[:,i]))+i,'k',linewidth=0.3)
+    for i in range(2):
+        plt.plot(timeL,yL[i]-i-1.5,'k',linewidth=0.5)
+    if len(t)>0:
+        plt.xlim(t)
+    plt.yticks(np.arange(-2,3),['S','P','E','N','Z'])
+    plt.ylim([-2.7,3])
+    plt.xlabel('t/s')
+    plt.savefig('NM/complexCondition.eps')
+    plt.savefig('NM/complexCondition.tiff',dpi=300)
+    plt.close()
+    
 
-    if len(laL0)>1:
-        #hC,=mt.plotOnMap(m,laL0,loL0,'ok',markersize=2)
-        plt.legend((hQ,hC,hS,hF),('Quakes','Catalog','Station','Faults'),\
-            bbox_to_anchor=(1, 1),loc='lower right')
-    else:
-        plt.legend((hQ,hS,hF),('Quakes','Station','Faults'),bbox_to_anchor=(1, 1),\
-              loc='lower right')
-    m.drawparallels(parallels,labels=[False,True,True,False])
-    meridians = np.arange(10.,360.,2.)
-    plt.gca().yaxis.set_ticks_position('left')
-    m.drawmeridians(meridians,labels=[True,False,False,True])
-    plt.savefig(output)
-    return m
+def showExampleV2(filenameL,modelL,delta=0.02,t=[],staName='sta'):
+    data=getDataByFileName(filenameL,freq=[2,15])
+    data=data.data[:3500*50]
+    
+    #i0=int(750/delta)
+    #i1=int(870/delta)
+    #plt.specgram(np.sign(data[i0:i1,1])*(np.abs(data[i0:i1,1])**0.5),NFFT=200,Fs=50,noverlap=190)
+    data/=data.max()/2
+    #plt.colorbar()
+    #plt.show()
+    plt.close()
+    yL=[predictLongData(model,data) for model in modelL]
+    timeL=np.arange(data.shape[0])*delta-720
+    #print(data.shape,timeL.shape)
+    for i in range(3):
+        plt.plot(timeL,np.sign(data[:,i])*(np.abs(data[:,i]))+i,'k',linewidth=0.3)
+    for i in range(len(modelL)):
+        plt.plot(timeL,yL[i]-i-1.5,'k',linewidth=0.5)
+        #plt.plot(timeL,yL[i]*0+0.5-i-1.5,'--k',linewidth=0.5)
+    if len(t)>0:
+        plt.xlim(t)
+    plt.yticks(np.arange(-4,3),['S1','S0','P1','P0','E','N','Z'])
+    plt.ylim([-4.7,3])
+    plt.xlabel('t/s')
+    plt.savefig('NM/complexConditionV2_%s.eps'%staName)
+    plt.savefig('NM/complexConditionV2_%s.tiff'%staName,dpi=300)
+    plt.close()
 
-def getStaLByQuake(staInfos, aMat, staTimeML, modelL,quake,\
-    getFileName=originFileName,taupM=tool.quickTaupModel(), \
-    mode='mid', N=5,isPre=False,bTime=-100,delta0=0.02):
-    staL=[None for i in range(len(staInfos))]
-    threads = list()
-    for i in range(len(staInfos)):
-        staInfo=staInfos[i]
-        nt = staInfo['net']
-        st = staInfo['sta']
-        loc = [staInfo['la'],staInfo['lo']]
-        print('process on sta: ',i)
-        dis=DistAz(quake.loc[0],quake.loc[1],staInfos[i]['la'],\
-            staInfos[i]['lo']).getDelta()
-        date=obspy.UTCDateTime(quake.time+taupM.get_travel_times(quake.loc[2],dis)[0].time+bTime)
-        getSta(staL, i, nt, st, date, modelL, staTimeML[i], loc, \
-            [0.01, 15], getFileName, taupM, mode,isPre=isPre,delta0=delta0)
-    return staL
-
-
-##plot part
 def plotRes(staL, quake, filename=None):
     colorStr='br'
     for record in quake:
@@ -577,144 +540,20 @@ def plotResS(staL,quakeL, outDir='output/'):
         #filename=outDir+'/'+str(quake.time)+'.jpg'
         plotRes(staL,quake,filename=filename)
 
-def plotQuakeCCDis(quakeCCLs,quakeRefL,output='quakeDis.png',cmd='.r',markersize=0.8,\
-    alpha=0.3,R=None,topo=None,m=None,staInfos=None,minSta=8,minCover=0.8,\
-    faultFile="Chinafault_fromcjw.dat",mul=1,minCC=0.5):
-    la=[]
-    lo=[]
-    dep=[]
-    mlL=[]
-    count=0
-    for quakeL in quakeCCLs:
-        for quake in quakeL:
-            if len(quake)<minSta:
-                continue
-            if staInfos!=None:
-                if quake.calCover(staInfos,minCC=minCC)<minCover:
-                    continue
-            ml=0
-            if quake.ml !=None:
-                if quake.ml>-2:
-                    ml=quake.ml
-            la.append(quake.loc[0])
-            lo.append(quake.loc[1])
-            dep.append(quake.loc[2])
-            mlL.append(ml)
-            count+=1
-    print(count)
-    la=np.array(la)
-    lo=np.array(lo)
-    dep=np.array(dep)
-    mlL=np.array(mlL)
-    if R==None:
-        R=[la.min(),la.max(),lo.min(),lo.max()]
-    laR=[]
-    loR=[]
-    depR=[]
-    mlLR=[]
-    for quake in quakeRefL:
-        ml=0
-        if quake.ml !=None:
-            if quake.ml>-2:
-                ml=quake.ml
-        laR.append(quake.loc[0])
-        loR.append(quake.loc[1])
-        depR.append(quake.loc[2])
-        mlLR.append(ml)
-    laR=np.array(laR)
-    loR=np.array(loR)
-    depR=np.array(depR)
-    mlLR=np.array(mlLR)
-    if m==None:
-        m=mt.genBaseMap(R=R,topo=topo)
-    if not staInfos == None:
-        sla=[]
-        slo=[]
-        sdep=[]
-        for staInfo in staInfos:
-            sla.append(staInfo['la'])
-            slo.append(staInfo['lo'])
-            sdep.append(staInfo['dep'])
-        sla=np.array(sla)
-        slo=np.array(slo)
-        sdep=np.array(sdep)
-        hS,=mt.plotOnMap(m,sla,slo,'^k',markersize=5,alpha=1)
-    faultL=mt.readFault(faultFile)
-    hF=None
-    for fault in faultL:
-        if fault.inR(R):
-            hFTmp,=fault.plot(m)
-            if hFTmp!=None:
-                hF=hFTmp
-
-    hT,=mt.plotOnMap(m,laR,loR,'*b',markersize*2,1)
-    hCC,=mt.plotOnMap(m,la,lo,cmd,markersize,alpha)
-    print(len(laR),len(la))
-
-    plt.legend((hT,hCC,hS,hF),('Templates','Microearthquakes','Station','Faults'))
-    #mt.plotOnMap(m,laR,loR,'*k',markersize*2,1)
-    #mt.scatterOnMap(m,la,lo,s=np.exp(mlL/1.5)*mul,alpha=alpha,c=np.array([1,0,0]))
-    plt.title('minSta:%d minCover:%.1f minCC:%.1f MFT:%d'%(minSta,minCover,minCC,count))
-    dD=max(int((R[1]-R[0])*10)/40,int((R[3]-R[2])*10)/40)
-    parallels = np.arange(int(R[0]),int(R[1]+1),dD)
-    m.drawparallels(parallels,labels=[False,True,True,False])
-    meridians = np.arange(int(R[2]),int(R[3]+1),dD)
-    m.drawmeridians(meridians,labels=[True,False,False,True])
-    return m
-
-
-def showExample(filenameL,modelL,delta=0.02,t=[]):
-    data=getDataByFileName(filenameL,freq=[2,15])
-    data=data.data[:2000*50]
-    
-    #i0=int(750/delta)
-    #i1=int(870/delta)
-    #plt.specgram(np.sign(data[i0:i1,1])*(np.abs(data[i0:i1,1])**0.5),NFFT=200,Fs=50,noverlap=190)
-    data/=data.max()/2
-    #plt.colorbar()
-    #plt.show()
-    plt.close()
-    yL=[predictLongData(modelL[i],data) for i in range(2)]
-    timeL=np.arange(data.shape[0])*delta-720
-    #print(data.shape,timeL.shape)
-    for i in range(3):
-        plt.plot(timeL,np.sign(data[:,i])*(np.abs(data[:,i]))+i,'k',linewidth=0.3)
-    for i in range(2):
-        plt.plot(timeL,yL[i]-i-1.5,'k',linewidth=0.5)
-    if len(t)>0:
-        plt.xlim(t)
-    plt.yticks(np.arange(-2,3),['S','P','E','N','Z'])
-    plt.ylim([-2.7,3])
-    plt.xlabel('t/s')
-    plt.savefig('NM/complexCondition.eps')
-    plt.savefig('NM/complexCondition.tiff',dpi=300)
-    plt.close()
-    
-
-def showExampleV2(filenameL,modelL,delta=0.02,t=[],staName='sta'):
-    data=getDataByFileName(filenameL,freq=[2,15])
-    data=data.data[:3500*50]
-    
-    #i0=int(750/delta)
-    #i1=int(870/delta)
-    #plt.specgram(np.sign(data[i0:i1,1])*(np.abs(data[i0:i1,1])**0.5),NFFT=200,Fs=50,noverlap=190)
-    data/=data.max()/2
-    #plt.colorbar()
-    #plt.show()
-    plt.close()
-    yL=[predictLongData(model,data) for model in modelL]
-    timeL=np.arange(data.shape[0])*delta-720
-    #print(data.shape,timeL.shape)
-    for i in range(3):
-        plt.plot(timeL,np.sign(data[:,i])*(np.abs(data[:,i]))+i,'k',linewidth=0.3)
-    for i in range(len(modelL)):
-        plt.plot(timeL,yL[i]-i-1.5,'k',linewidth=0.5)
-        #plt.plot(timeL,yL[i]*0+0.5-i-1.5,'--k',linewidth=0.5)
-    if len(t)>0:
-        plt.xlim(t)
-    plt.yticks(np.arange(-4,3),['S1','S0','P1','P0','E','N','Z'])
-    plt.ylim([-4.7,3])
-    plt.xlabel('t/s')
-    plt.savefig('NM/complexConditionV2_%s.eps'%staName)
-    plt.savefig('NM/complexConditionV2_%s.tiff'%staName,dpi=300)
-    plt.close()
+def getStaLByQuake(staInfos, aMat, staTimeML, modelL,quake,\
+    getFileName=originFileName,taupM=tool.quickTaupModel(), \
+    mode='mid', N=5,isPre=False,bTime=-100,delta0=0.02):
+    staL=[None for i in range(len(staInfos))]
+    threads = list()
+    for i in range(len(staInfos)):
+        staInfo=staInfos[i]
+        nt = staInfo['net']
+        st = staInfo['sta']
+        loc = [staInfo['la'],staInfo['lo']]
+        print('process on sta: ',i)
+        dis=DistAz(quake.loc[0],quake.loc[1],staInfos[i]['la'],\
+            staInfos[i]['lo']).getDelta()
+        date=obspy.UTCDateTime(quake.time+taupM.get_travel_times(quake.loc[2],dis)[0].time+bTime)
+        getSta(staL, i, nt, st, date, modelL, staTimeML[i], loc, \
+            [0.01, 15], getFileName, taupM, mode,isPre=isPre,delta0=delta0)
+    return staL
