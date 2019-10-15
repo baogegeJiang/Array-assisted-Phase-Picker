@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-import time
 '''
 this module is designed to calculate correlation and weak-max by torch
 '''
