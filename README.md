@@ -78,7 +78,7 @@ bSec=UTCDateTime(2015,6,1).timestamp#begain date
 eSec=UTCDateTime(2015,10,1).timestamp#end date
 laL=[35, 45]#area: [min_latitude, max_latitude]
 loL=[96, 105]#area: [min_longitude, max_longitude]
-laN=35#subareas in latitude
+laN=35#subareas in latitude/the default is enough
 loN=35#subareas in longitude
 nameFunction=FileName# set to your own file path function
 
