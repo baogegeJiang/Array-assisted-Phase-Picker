@@ -112,6 +112,20 @@ for date in range(int(bSec),int(eSec),86400):
 
 then run this script you can detect earthquakes in your data
 
+in the phaseLst file:  
+line for quake:  
+'''
+quake: 41.069343 100.100329 1388627056.193255 num: 5 index: 0 randID: 1 filename:             16072/1388627055_1.mat -0.026085 3.335500
+'''
+quake: lat lon time(obspy.UTCDateTime().timestamp) num: (how many station record) index: ( index of quake) randID: (give each quake a unique ID) filename: (where to save the waveform data of this quake) magnitude depth  
+
+line for record :  
+'''
+30 1388627080.025000  1388627095.945000 
+'''
+staIndex(start from 0) pTime sTime
+
+
 ## Reference:  
 Zhu W, Beroza G C. PhaseNet: a deep-neural-network-based seismic arrival-time picking method. Geophys J Int, 2018, 216(1): 261-273.  
 Jiang Y R, Ning J Y. Automatic detection of seismic body-wave phases and determination of their arrival times based on support vector machine(in Chinese). Chinese J Geophys, 2019, 62(1): 361-373.  

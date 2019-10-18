@@ -13,6 +13,7 @@ from distaz import DistAz
 import matplotlib.pyplot as plt
 from scipy import signal
 from openpyxl import Workbook
+from handleLog import getLocByLogsP
 
 
 def getYmdHMSj(date):
@@ -891,81 +892,6 @@ def getEarliest(arrivals):
             time = min(time, arrival.time)
         return time
 
-def validMean(vL):
-    vM=np.median(vL)
-    vD=vL.std()
-    vLst=np.where(np.abs(vL-vM)<10*vD)
-    vL=vL[vLst]
-    return vL
-
-'''
-tool for read data recorder logs
-to get location from gps info
-getLocByLog
-getLocByLogs
-getLocByLogsP
-'''
-#GPS: POSITION: N41:45:04.50 E103:23:45.46
-def getLocByLog(filename):
-    p=r"GPS: POSITION.{36}"
-    if not os.path.exists(filename):
-        return 999,999,999,999,999,999
-    with open(filename) as f:
-        lines=f.read()
-        pRe=re.compile(p)
-        laL=[]
-        loL=[]
-        zL=[]
-        for line in pRe.findall(lines):
-            EW=1
-            NS=1
-            if line[15]=='S':
-                NS=-1
-            if line[28]=='W':
-                EW=-1
-            la=NS*(float(line[16:18])+float(line[19:21])/60+float(line[22:27])/3600)
-            laL.append(la)
-            lo=EW*(float(line[29:32])+float(line[33:35])/60+float(line[36:41])/3600)
-            loL.append(lo)
-            zL.append(float(line[42:-1]))
-    if len(laL)>0 and len(loL)>0:
-        laL=np.array(laL)
-        loL=np.array(loL)
-        zL=np.array(zL)
-        laL=validMean(laL)
-        loL=validMean(loL)
-        zL=validMean(zL)
-    if len(laL)>0 and len(loL)>0 and len(zL)>0:
-        return laL.mean(), loL.mean(), laL.std(), loL.std(), zL.mean(), zL.std()
-    else:
-        return 999, 999, 999, 999, 999, 999
-
-def getLocByLogs(filenames):
-    laL=[]
-    loL=[]
-    zL=[]
-    for filename in filenames:
-        la, lo, laD, loD, z, zD = getLocByLog(filename)
-        if laD>1e-3 or loD>1e-3:
-            print('RMS too large', laD, loD)
-            continue
-        if la !=999 and lo!=999:
-            laL.append(la)
-            loL.append(lo)
-            zL.append(z)
-    if len(laL)>0 and len(loL)>0:
-        laL=np.array(laL)
-        loL=np.array(loL)
-        zL=np.array(zL)
-        return laL.mean(),loL.mean(),laL.std(),loL.std(),zL.mean(),zL.std()
-    else:
-        return 999,999,999,999,999,999
-
-def getLocByLogsP(p):
-    filenames=[];
-    for file in glob(p):
-        filenames.append(file)
-    return getLocByLogs(filenames)
 
 '''
 this part is designed for getting sta info (loc and file path)
