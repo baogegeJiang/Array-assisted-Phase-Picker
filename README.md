@@ -37,7 +37,8 @@ def FileName(net, station, comp, YmdHMSJ):
         YmdHMSJ['m']+YmdHMSJ['d']+'.'+station+'.'+c+'.SAC')
     return sacFileNames
 ```
-net is the network name(e. g. 'XX' ); station is the station name(e. g. 'ABC' ); comp is the component name(e. g. 'BHE' ); YmdHMSJ is a dict contained date information(year, month, day, hour, minute, second, day num from the first day of the year)(e. g. {'Y': '2019', 'm': '01', 'd': '01', 'H': '00', 'M': '01', 'S': '00', 'J': '001'}).  you need not to think about how to give the input as we would automaticlly give it in our program. you just need to write the function that return the specific file path according to the input.  
+net is the network name(e. g. 'XX' ); station is the station name(e. g. 'ABC' ); comp is the component name(e. g. 'BHE' ); YmdHMSJ is a dict contained date information(year, month, day, hour, minute, second, day num from the first day of the year)(e. g. {'Y': '2019', 'm': '01', 'd': '01', 'H': '00', 'M': '01', 'S': '00', 'J': '001'}).    
+you need not to think about how to give the inputs as we would automaticlly give it in our program. you just need to write the function that return the specific file path according to the input when it was called.  
 in our example, the function will return the list of file path(e. g. ['data/XX/ABC/XX.ABC.20190101.E.SAC']). if a single day's data of one station is composed of several files, you should return list contain all of them, e. g. [fileA,fileB,....,fileX]. if you can easily convert your file into our file path pattern, you can use our file path function after the preparation.
 
 (3) edit the run script:
