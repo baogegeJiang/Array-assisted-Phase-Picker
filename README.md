@@ -18,15 +18,17 @@ pip install https://github.com/j08lue/pycpt/archive/master.zip
 
 phaseNet is based on ZhuW‘s paper and we adopted it for continuous waveform. the array strategy is based on Jiang Y and Ning J's papaer. As we provide some pre-trained model, you can directly use our program on your data.  
 in general, you need to provide the following things before runing our program:  
-(1) station information list file:  
 
-#net sta    comp longitude/° latitude/° elevation/m  rms_of_lon rms_of_lat
+### (1) station information list file:  
+
+net sta    comp longitude/° latitude/° elevation/m  rms_of_lon rms_of_lat
 ```
 XX  JJS    BH   104.55      31.00      0.000000     0.000000   0 0.000000  
 ```
 rms of lon/lat is the loction rms from the data log's GPS loction (not necessary, you can just set it to 0 )  
 the example is 'staLstSC'  
- (2) file path function:  
+   
+ ### (2) file path function:  
  write a funciton that return the sacFileNames list according to the input(net/station/comp/date). we give an example:
 ```python
 def FileName(net, station, comp, YmdHMSJ):
@@ -42,7 +44,8 @@ net is the network name(e. g. 'XX' ); station is the station name(e. g. 'ABC' );
 you need not to think about how to give the inputs as we would automaticlly give it in our program. you just need to write the function that return the specific file path according to the input when it was called.  
 in our example, the function will return the list of file path(e. g. ['data/XX/ABC/XX.ABC.20190101.E.SAC']). if a single day's data of one station is composed of several files, you should return list contain all of them, e. g. [fileA,fileB,....,fileX]. if you can easily convert your file into our file path pattern, you can use our file path function after the preparation.
 
-(3) edit the run script:
+  
+### (3) edit the run script:
 we give the detail in the script
 ```python
 import os
