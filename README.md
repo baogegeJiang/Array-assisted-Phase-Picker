@@ -26,7 +26,7 @@ in general, you need to provide the following things before runing our program:
 ```
 rms of lon/lat is the loction rms from the data log's GPS loction (not necessary, you can only set to 0 )  
  (2) file path function:  
- write a funciton in names.py that return the sacFileNames list according to the input(net/station/comp/date). we give an example:
+ write a funciton that return the sacFileNames list according to the input(net/station/comp/date). we give an example:
 ```python
 def FileName(net, station, comp, YmdHMSJ):
     sacFileNames = list()
