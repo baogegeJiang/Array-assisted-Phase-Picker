@@ -20,11 +20,12 @@ phaseNet is based on ZhuW‘s paper and we adopted it for continuous waveform. t
 in general, you need to provide the following things before runing our program:  
 (1) station information list file:  
 
-```
 #net sta    comp longitude/° latitude/° elevation/m  rms_of_lon rms_of_lat
- XX  JJS    BH   104.55      31.00      0.000000     0.000000   0 0.000000  
+```
+XX  JJS    BH   104.55      31.00      0.000000     0.000000   0 0.000000  
 ```
 rms of lon/lat is the loction rms from the data log's GPS loction (not necessary, you can only set to 0 )  
+the example is 'staLstSC'  
  (2) file path function:  
  write a funciton that return the sacFileNames list according to the input(net/station/comp/date). we give an example:
 ```python
