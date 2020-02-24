@@ -1,23 +1,23 @@
-# accuratePicker  
+# Array-assisted Phase Picker (APP)
 
 author: Jiang Yiran & Ning Jieyuan  
 a program for earthquakes and micro-earthquakes detection  
 it has three fundamental parts：  
-1 detect earthquakes using improved phaseNet and array strategy  
+1 detect earthquakes using APP  
 2 detect micro-earthquakes based on GPU-WMFT  
-3 calculate travel time difference by cross-correlation  and provide input files for tomoDD
+3 calculate travel time difference by cross-correlation and provide input files for tomoDD
 
-As we developed this program in our research, it also contains many other functions.  if not needed, you can ignore the other part. Any way, the reorgainizing work is going on and we would try to give a better way to use for users who need this kind of functions. 
+As we developed this program in our research, it also contains many other functions.  if not needed, you can ignore the other part. Anyway, the reorganizing work is going on and we would try to give a better way to use for users who need this kind of functions. 
 
-## 1、Improved phaseNet and array strategy  
+## 1、Array-assisted Phase Picker  
 
-Needed package in this part: numpy, numba, obspy, h5py, scipy,matplotlib, openpyxl, tensorflow-gpu,keras(optional: basemap, netCDF4, lxml, pykml,pycpt). And pycpt is not available on open source, then you can install it via:
+Needed package in this part: numpy, numba, obspy, h5py, scipy,matplotlib, openpyxl, tensorflow-gpu,keras(optional: basemap, netCDF4, lxml, pykml,pycpt). As pycpt is not available on open source, you can install it via:
 ```
 pip install https://github.com/j08lue/pycpt/archive/master.zip
 ```
 
-phaseNet is based on ZhuW‘s paper and we adopted it for continuous waveform. the array strategy is based on Jiang Y and Ning J's papaer. As we provide some pre-trained model, you can directly use our program on your data.  
-in general, you need to provide the following things before runing our program:  
+phaseNet is based on ZhuW‘s paper and we adopted it for continuous waveform proposing Phase Picker(PP). We combined it with the array strategy developed by Jiang Y and Ning J as Array-assisted Phase Picker (APP). As we provide some pre-trained model, you can directly use our program on your data.  
+in general, you need to provide the following things before running our program:  
 
 ### (1) station information list file:  
 
@@ -25,11 +25,11 @@ net sta    comp longitude/° latitude/° elevation/m  rms_of_lon rms_of_lat
 ```
 XX  JJS    BH   104.55      31.00      0.000000     0.000000   0 0.000000  
 ```
-rms of lon/lat is the loction rms from the data log's GPS loction (not necessary, you can just set it to 0 )  
+rms of lon/lat is the location rms from the data log's GPS location (not necessary, you can just set it to 0 )  
 the example is 'staLstSC'  
    
  ### (2) file path function:  
- write a funciton that return the sacFileNames list according to the input(net/station/comp/date). we give an example:
+ write a function that return the sacFileNames list according to the input(net/station/comp/date). we give an example:
 ```python
 def FileName(net, station, comp, YmdHMSJ):
     sacFileNames = list()
@@ -41,8 +41,8 @@ def FileName(net, station, comp, YmdHMSJ):
     return sacFileNames
 ```
 net is the network name(e. g. 'XX' ); station is the station name(e. g. 'ABC' ); comp is the component name(e. g. 'BHE' ); YmdHMSJ is a dict contained date information(year, month, day, hour, minute, second, day num from the first day of the year)(e. g. {'Y': '2019', 'm': '01', 'd': '01', 'H': '00', 'M': '01', 'S': '00', 'J': '001'}).    
-you need not to think about how to give the inputs as we would automaticlly give it in our program. you just need to write the function that return the specific file path according to the input when it was called.  
-in our example, the function will return the list of file path(e. g. ['data/XX/ABC/XX.ABC.20190101.E.SAC']). if a single day's data of one station is composed of several files, you should return list contain all of them, e. g. [fileA,fileB,....,fileX]. if you can easily convert your file into our file path pattern, you can use our file path function after the preparation.
+you need not to think about how to give the input as we would automatically give it in our program. you just need to write the function that return the specific file path according to the input when it was called.  
+in our example, the function will return the list of file path(e. g. ['data/XX/ABC/XX.ABC.20190101.E.SAC']). if a single day's data of one station is composed of several files, you should return list containing all of them, e. g. [fileA,fileB,....,fileX]. if you can easily convert your file into our file path pattern, you can use our file path function after the preparation.
 
   
 ### (3) edit the run script:
