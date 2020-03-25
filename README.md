@@ -133,5 +133,6 @@ staIndex(start from 0) pTime(0 means no phase picked) sTime
 
 ## Reference:  
 刘芳,蒋一然,宁杰远,张建中,赵艳红.结合台阵策略的震相拾取深度学习方法[J/OL].科学通报:1-11[2020-03-25].http://kns.cnki.net/kcms/detail/11.1784.N.20200320.1616.004.html. 
+
 Zhu W, Beroza G C. PhaseNet: a deep-neural-network-based seismic arrival-time picking method. Geophys J Int, 2018, 216(1): 261-273.  
 Jiang Y R, Ning J Y. Automatic detection of seismic body-wave phases and determination of their arrival times based on support vector machine(in Chinese). Chinese J Geophys, 2019, 62(1): 361-373.  
