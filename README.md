@@ -14,6 +14,12 @@ As we developed this program in our research, it also contains many other functi
 ### simple way
 in the simple way, the only .py scripts you need is genMV3.py   
 Needed packages: keras and numpy   
+if you do not want to train model and just want use our pretrained ones  
+you can just install keras's cpu version instead of gpu version 
+because in the prediction process the cpu version's computation speed is engouh
+and does not involve difficulties in install gpu drive  
+
+you can use our model by the following steps:      
 first load the deep learning model  
 as we use two nets for picking P and S waves separately 
 we need loads two nets    
