@@ -22,7 +22,7 @@ and does not involve difficulties in installing gpu drive
 you can use our model by the following steps:      
 first load the deep learning model  
 as we use two nets for picking P and S waves separately 
-we need loads two nets    
+we need load two nets(modelP,modelS)  
 ```py
 from genMV3 import genModel
 modelP = genModel()
@@ -30,7 +30,7 @@ modelP.load_weights('modelP_320000_100-2-15')
 modelS = genModel()
 modelS.load_weights('modelS_320000_100-2-15')
 ```
-prepare you data (inputData)   
+prepare your data (inputData)   
 the input data's shape should be [n, 2000, 1,3]   
 "n" means the data slices count   
 "2000" means each slice has 2000 samples in the time domain(50 Hz,40s)   
