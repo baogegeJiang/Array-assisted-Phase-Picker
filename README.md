@@ -35,8 +35,8 @@ inputData /= inputData.std(axis=(1, 2, 3),keepdims=True) #normalize
 ```
 input the data to model   
 ```py
-probP = modelP.predict(inputDataNew)
-probS = modelS.predict(inputDataNew)
+probP = modelP.predict(inputData)
+probS = modelS.predict(inputData)
 ```
 then you get the probabilities of P and S wave(prob and probs)  
 You can set different thresholds according to your requirments
