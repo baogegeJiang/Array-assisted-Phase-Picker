@@ -20,7 +20,7 @@ from genMV3 import genModel
 modelP = genModel()
 modelP.load_weights('modelP_320000_100-2-15')
 modelS = genModel()
-modelS.load_weights('modelP_320000_100-2-15')
+modelS.load_weights('modelS_320000_100-2-15')
 ```
 prepare you data (inputData)   
 the input data's shape should be [n, 2000, 1,3]   
