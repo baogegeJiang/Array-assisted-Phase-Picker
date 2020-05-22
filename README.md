@@ -14,7 +14,9 @@ As we developed this program in our research, it also contains many other functi
 ### simple way
 in the simple way, the only .py scripts you need is genMV3.py   
 Needed packages: keras and numpy   
-first load the deep learning model:   
+first load the deep learning model  
+as we use two nets for picking P and S waves separately 
+we need loads two nets    
 ```py
 from genMV3 import genModel
 modelP = genModel()
@@ -29,7 +31,7 @@ the input data's shape should be [n, 2000, 1,3]
 "3" means each slice have three components (E,N,Z)   
 the data should be filtered in bandpass of (2 Hz,15 Hz)   
 ```py 
-inputDataNew /= inputDataNew.std(axis=(1, 2, 3),keepdims=True) #normalize
+inputData /= inputData.std(axis=(1, 2, 3),keepdims=True) #normalize
 ```
 input the data to model   
 ```py
