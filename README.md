@@ -11,6 +11,36 @@ As we developed this program in our research, it also contains many other functi
 
 ## 1、Array-assisted Phase Picker  
 
+### simple way
+in the simple way, the only .py scripts you need is genMV3.py
+Needed packages: keras and numpy
+first load the deep learning model:
+```py
+from genMV3 import genModel
+modelP = genModel()
+modelP.load_weights('modelP_320000_100-2-15')
+modelS = genModel()
+modelS.load_weights('modelP_320000_100-2-15')
+```
+prepare you data (inputData)
+the input data's shape should be [n, 2000, 1,3]
+"n" means the data slices count
+"2000" means each slice has 2000 samples in the time domain(50 Hz,40s)
+"3" means each slice have three components (E,N,Z)
+the data should be filtered in bandpass of (2 Hz,15 Hz)
+```py 
+inputDataNew /= inputDataNew.std(axis=(1, 2, 3),keepdims=True) #normalize
+```
+input the data to model
+```py
+probP = modelP.predict(inputDataNew)
+probS = modelS.predict(inputDataNew)
+```
+then you get the probabilities of P and S wave(prob and probs)
+You can set different thresholds according to your requirments
+
+### normal way
+
 Needed package in this part: numpy, numba, obspy, h5py, scipy,matplotlib, openpyxl, tensorflow-gpu,keras(optional: basemap, netCDF4, lxml, pykml,pycpt). As pycpt is not available on open source, you can install it via:
 ```
 pip install https://github.com/j08lue/pycpt/archive/master.zip
