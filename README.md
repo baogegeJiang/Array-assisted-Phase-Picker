@@ -13,9 +13,9 @@ As we developed this program in our research, it also contains many other functi
 
 ### simple way
 in the simple way, the only .py scripts you need is genMV3.py   
-Needed packages: keras and numpy   
+Needed packages: tensorflow, keras and numpy   
 if you do not want to train model and just want use our pretrained ones  
-you can just install keras's cpu version instead of gpu version 
+you can just install tensorflow's cpu version instead of gpu version 
 because in the prediction process the cpu version's computation speed is engouh
 and does not involve difficulties in install gpu drive  
 
