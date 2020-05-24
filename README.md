@@ -12,9 +12,9 @@ As we developed this program in our research, it also contains many other functi
 ## 1、Array-assisted Phase Picker  
 
 ### simple way
-in the simple way, the only .py scripts you need is genMV3.py   
+in the simple way, the only .py script you need is genMV3.py   
 Needed packages: tensorflow, keras and numpy   
-if you do not want to train model and just want use our pretrained ones  
+if you do not want to train model and just want to use our pretrained ones  
 you can just install tensorflow's cpu version instead of gpu version 
 because in the prediction process the cpu version's computation speed is enough
 and does not involve difficulties in installing gpu drive  
@@ -26,9 +26,13 @@ we need load two nets(modelP,modelS)
 ```py
 from genMV3 import genModel
 modelP = genModel()
-modelP.load_weights('modelP_320000_100-2-15')
+modelP.load_weights('modelP_320000_0-2-15-with')
 modelS = genModel()
-modelS.load_weights('modelS_320000_100-2-15')
+modelS.load_weights('modelS_320000_0-2-15-with')
+'''
+'modelP_320000_0-2-15-with' and 'modelP_320000_0-2-15-with' are trained with typical noise 
+'modelP_320000_100-2-15' and 'modelP_320000_100-2-15' are trained without typical noise
+'''
 ```
 prepare your data (inputData)   
 the input data's shape should be [n, 2000, 1,3]   
